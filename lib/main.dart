@@ -1,3 +1,4 @@
+import 'package:appventas/blocs/item/item_bloc.dart';
 import 'package:appventas/blocs/quotations/quotations_bloc.dart';
 import 'package:appventas/blocs/sales/sales_bloc.dart';
 import 'package:flutter/material.dart';
@@ -34,6 +35,7 @@ class MyApp extends StatelessWidget {
         BlocProvider<QuotationsBloc>(create: (context) => QuotationsBloc()),
         BlocProvider<SalesBloc>(create: (context) => SalesBloc()),
         BlocProvider<CustomerBloc>(create: (context) => CustomerBloc()), // Nuevo BlocProvider
+        BlocProvider<ItemBloc>(create: (context) => ItemBloc()),
         BlocProvider<UomBloc>(create: (context) => UomBloc()), // Nuevo BlocProvider
       ],
       child: MaterialApp(

@@ -1,16 +1,17 @@
-// lib/screens/create_quotation_screen_with_uom.dart
-// Versión actualizada con selección de unidades de medida
 import 'package:appventas/blocs/customer/customer_bloc.dart';
 import 'package:appventas/blocs/quotations/quotations_bloc.dart';
 import 'package:appventas/blocs/quotations/quotations_event.dart';
 import 'package:appventas/blocs/quotations/quotations_state.dart';
+import 'package:appventas/blocs/item/item_bloc.dart';
 import 'package:appventas/blocs/uom/uom_bloc.dart';
 import 'package:appventas/blocs/uom/uom_event.dart';
+import 'package:appventas/models/customer/customer.dart';
+import 'package:appventas/models/item/item.dart';
+import 'package:appventas/models/item/unit_of_measure.dart';
 import 'package:appventas/models/quotation/quotation_line_item.dart';
 import 'package:appventas/models/sales_quotation_dto.dart';
-import 'package:appventas/models/customer/customer.dart';
-import 'package:appventas/models/item/unit_of_measure.dart';
 import 'package:appventas/screens/customers/customer_selection_screen.dart';
+import 'package:appventas/screens/items/item_selection_screen.dart';
 import 'package:appventas/widgets/uom_dropdown.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -54,6 +55,7 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
       _documentLines.add(QuotationLineItem(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
         itemCode: '',
+        selectedItem: null,
         quantity: 1.0,
         priceAfterVAT: 0.0,
         selectedUom: null,
@@ -93,6 +95,38 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
     }
   }
 
+  Future<void> _selectItem(int index) async {
+    final selectedItem = await Navigator.of(context).push<Item>(
+      MaterialPageRoute(
+        builder: (context) => BlocProvider.value(
+          value: context.read<ItemBloc>(),
+          child: ItemSelectionScreen(
+            initialItem: _documentLines[index].selectedItem,
+          ),
+        ),
+      ),
+    );
+
+    if (selectedItem != null) {
+      setState(() {
+        _documentLines[index] = _documentLines[index].copyWith(
+          itemCode: selectedItem.itemCode,
+          selectedItem: selectedItem,
+          selectedUom: null, // Reset UoM when item changes
+        );
+      });
+
+      // Cargar UoMs para el nuevo item
+      context.read<UomBloc>().add(UomLoadRequested(selectedItem.itemCode));
+    }
+  }
+
+  void _onUomChanged(int index, UnitOfMeasure? uom) {
+    setState(() {
+      _documentLines[index] = _documentLines[index].copyWith(selectedUom: uom);
+    });
+  }
+
   void _createQuotation() {
     if (_formKey.currentState!.validate()) {
       if (_selectedCustomer == null) {
@@ -108,8 +142,12 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
       // Validar que todas las líneas tengan datos completos
       for (int i = 0; i < _documentLines.length; i++) {
         final line = _documentLines[i];
-        if (line.itemCode.isEmpty || line.quantity <= 0 || line.priceAfterVAT < 0) {
-          _showErrorMessage('Complete todos los datos de la línea ${i + 1}');
+        if (line.selectedItem == null) {
+          _showErrorMessage('Seleccione un item para la línea ${i + 1}');
+          return;
+        }
+        if (line.quantity <= 0 || line.priceAfterVAT < 0) {
+          _showErrorMessage('Complete cantidad y precio para la línea ${i + 1}');
           return;
         }
         if (line.selectedUom == null) {
@@ -123,13 +161,15 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
         comments: _commentsController.text.trim(),
         salesPersonCode: int.tryParse(_salesPersonController.text) ?? 1,
         uUsrventafacil: 'APP_FLUTTER',
+        uLatitud: _latitudeController.text.trim().isEmpty ? null : _latitudeController.text.trim(),
+        uLongitud: _longitudeController.text.trim().isEmpty ? null : _longitudeController.text.trim(),
         uVfTiempoEntrega: _deliveryTimeController.text.trim(),
         uVfValidezOferta: _offerValidityController.text.trim(),
         uVfFormaPago: _paymentMethodController.text.trim(),
         uFecharegistroapp: DateTime.now(),
         uHoraregistroapp: DateTime.now(),
         documentLines: _documentLines.map((line) => SalesQuotationLineDto(
-          itemCode: line.itemCode,
+          itemCode: line.selectedItem!.itemCode,
           quantity: line.quantity,
           priceAfterVAT: line.priceAfterVAT,
           uomEntry: line.selectedUom!.uomEntry,
@@ -151,26 +191,6 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
 
   double _calculateTotal() {
     return _documentLines.fold(0.0, (sum, line) => sum + (line.quantity * line.priceAfterVAT));
-  }
-
-  void _onItemCodeChanged(int index, String itemCode) {
-    setState(() {
-      _documentLines[index] = _documentLines[index].copyWith(
-        itemCode: itemCode,
-        selectedUom: null, // Reset UoM when item changes
-      );
-    });
-
-    // Cargar UoMs para el nuevo item si no está vacío
-    if (itemCode.isNotEmpty) {
-      context.read<UomBloc>().add(UomLoadRequested(itemCode));
-    }
-  }
-
-  void _onUomChanged(int index, UnitOfMeasure? uom) {
-    setState(() {
-      _documentLines[index] = _documentLines[index].copyWith(selectedUom: uom);
-    });
   }
 
   @override
@@ -710,72 +730,140 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
             ),
             const SizedBox(height: 12),
             
+            // Item Selection Button
+            InkWell(
+              onTap: () => _selectItem(index),
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: line.selectedItem == null 
+                        ? Colors.red.withOpacity(0.5) 
+                        : Colors.blue[200]!,
+                  ),
+                  borderRadius: BorderRadius.circular(8),
+                  color: line.selectedItem == null 
+                      ? Colors.grey[50] 
+                      : Colors.blue[50],
+                ),
+                child: line.selectedItem == null
+                    ? Row(
+                        children: [
+                          Icon(
+                            Icons.add_shopping_cart,
+                            color: Colors.grey[600],
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Seleccionar Item',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.grey[700],
+                                  ),
+                                ),
+                                Text(
+                                  'Toca para buscar y seleccionar un item',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Icon(
+                            Icons.arrow_forward_ios,
+                            color: Colors.grey[400],
+                            size: 16,
+                          ),
+                        ],
+                      )
+                    : Row(
+                        children: [
+                          CircleAvatar(
+                            backgroundColor: Colors.blue[600],
+                            radius: 16,
+                            child: const Icon(
+                              Icons.inventory_2,
+                              color: Colors.white,
+                              size: 16,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  line.selectedItem!.displayName,
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                Text(
+                                  'Código: ${line.selectedItem!.itemCode}',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Text(
+                            'Cambiar',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.blue[600],
+                            ),
+                          ),
+                        ],
+                      ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            
             TextFormField(
-              initialValue: line.itemCode,
+              initialValue: line.quantity.toString(),
               decoration: InputDecoration(
-                labelText: 'Código del Producto *',
+                labelText: 'Cantidad *',
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
-                hintText: 'Ej: A00001',
-                helperText: 'Código del producto en SAP',
               ),
-              onChanged: (value) => _onItemCodeChanged(index, value),
+              keyboardType: TextInputType.number,
+              onChanged: (value) {
+                final quantity = double.tryParse(value) ?? 0.0;
+                setState(() {
+                  _documentLines[index] = _documentLines[index].copyWith(quantity: quantity);
+                });
+              },
               validator: (value) {
                 if (value == null || value.isEmpty) {
-                  return 'El código del producto es requerido';
+                  return 'Requerido';
+                }
+                if (double.tryParse(value) == null || double.parse(value) <= 0) {
+                  return 'Cantidad inválida';
                 }
                 return null;
               },
             ),
             const SizedBox(height: 12),
-            
-            Row(
-              children: [
-                Expanded(
-                  flex: 2,
-                  child: TextFormField(
-                    initialValue: line.quantity.toString(),
-                    decoration: InputDecoration(
-                      labelText: 'Cantidad *',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    keyboardType: TextInputType.number,
-                    onChanged: (value) {
-                      final quantity = double.tryParse(value) ?? 0.0;
-                      setState(() {
-                        _documentLines[index] = _documentLines[index].copyWith(quantity: quantity);
-                      });
-                    },
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Requerido';
-                      }
-                      if (double.tryParse(value) == null || double.parse(value) <= 0) {
-                        return 'Cantidad inválida';
-                      }
-                      return null;
-                    },
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  flex: 2,
-                  child: UomDropdown(
-                    itemCode: line.itemCode,
-                    selectedUom: line.selectedUom,
-                    onChanged: (uom) => _onUomChanged(index, uom),
-                    enabled: line.itemCode.isNotEmpty,
-                    label: 'UoM',
-                    isRequired: true,
-                  ),
-                ),
-              ],
+            UomDropdown(
+              itemCode: line.itemCode,
+              selectedUom: line.selectedUom,
+              onChanged: (uom) => _onUomChanged(index, uom),
+              enabled: line.selectedItem != null,
+              label: 'Unidad de Medida',
+              isRequired: true,
             ),
             const SizedBox(height: 12),
-            
             TextFormField(
               initialValue: line.priceAfterVAT.toString(),
               decoration: InputDecoration(

@@ -1,9 +1,11 @@
-// Clase helper para manejar las líneas de cotización
+// Clase helper para manejar las líneas de cotización con items
+import 'package:appventas/models/item/item.dart';
 import 'package:appventas/models/item/unit_of_measure.dart';
 
 class QuotationLineItem {
   final String id;
   final String itemCode;
+  final Item? selectedItem;
   final double quantity;
   final double priceAfterVAT;
   final UnitOfMeasure? selectedUom;
@@ -11,6 +13,7 @@ class QuotationLineItem {
   QuotationLineItem({
     required this.id,
     required this.itemCode,
+    this.selectedItem,
     required this.quantity,
     required this.priceAfterVAT,
     this.selectedUom,
@@ -19,6 +22,7 @@ class QuotationLineItem {
   QuotationLineItem copyWith({
     String? id,
     String? itemCode,
+    Item? selectedItem,
     double? quantity,
     double? priceAfterVAT,
     UnitOfMeasure? selectedUom,
@@ -26,6 +30,7 @@ class QuotationLineItem {
     return QuotationLineItem(
       id: id ?? this.id,
       itemCode: itemCode ?? this.itemCode,
+      selectedItem: selectedItem ?? this.selectedItem,
       quantity: quantity ?? this.quantity,
       priceAfterVAT: priceAfterVAT ?? this.priceAfterVAT,
       selectedUom: selectedUom,
