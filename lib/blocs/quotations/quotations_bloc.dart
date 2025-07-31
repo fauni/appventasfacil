@@ -12,10 +12,7 @@ class QuotationsBloc extends Bloc<QuotationsEvent, QuotationsState> {
     // on<QuotationConvertToSaleRequested>(_onConvertToSaleRequested);
   }
 
-  Future<void> _onLoadRequested(
-    QuotationsLoadRequested event,
-    Emitter<QuotationsState> emit,
-  ) async {
+  Future<void> _onLoadRequested(QuotationsLoadRequested event,Emitter<QuotationsState> emit) async {
     emit(QuotationsLoading());
     try {
       final token = await StorageService.getToken();
@@ -31,22 +28,10 @@ class QuotationsBloc extends Bloc<QuotationsEvent, QuotationsState> {
     }
   }
 
-  Future<void> _onCreateRequested(
-    QuotationCreateRequested event,
-    Emitter<QuotationsState> emit,
-  ) async {
+  Future<void> _onCreateRequested(QuotationCreateRequested event,Emitter<QuotationsState> emit) async {
     emit(QuotationsLoading());
     try {
-      final token = await StorageService.getToken();
-      if (token == null) {
-        emit(const QuotationsError('No authentication token found'));
-        return;
-      }
-
-      final result = await QuotationService.createQuotation(
-        event.quotationDto,
-        token,
-      );
+      final result = await QuotationService.createQuotation(event.quotationDto);
       emit(QuotationCreated(result));
     } catch (e) {
       emit(QuotationsError(e.toString()));

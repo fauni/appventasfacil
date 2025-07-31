@@ -1,6 +1,7 @@
 // lib/blocs/customer/customer_bloc.dart
+import 'package:appventas/services/http_client.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:appventas/models/customer.dart';
+import 'package:appventas/models/customer/customer.dart';
 import 'package:appventas/services/customer_service.dart';
 import 'customer_event.dart';
 import 'customer_state.dart';
@@ -37,6 +38,10 @@ class CustomerBloc extends Bloc<CustomerEvent, CustomerState> {
         response: response,
         searchTerm: event.searchTerm,
       ));
+    } on UnauthorizedException catch (e) {
+      // No emitir error - el HttpClient ya manejó la redirección
+      // El usuario será redirigido al login automáticamente
+      print('🔓 Sesión expirada detectada en CustomerBloc');
     } catch (e) {
       emit(CustomerError('Error al buscar clientes: ${e.toString()}'));
     }
@@ -114,17 +119,12 @@ class CustomerBloc extends Bloc<CustomerEvent, CustomerState> {
           allCustomers: allCustomers,
         ));
       }
+    } on UnauthorizedException catch (e) {
+      // Redirección automática - no emitir error
+      print('🔓 Sesión expirada detectada en load more');
     } catch (e) {
       emit(CustomerError('Error al cargar más clientes: ${e.toString()}'));
     }
-  }
-
-  Future<void> _onCustomerSelected(
-    CustomerSelected event,
-    Emitter<CustomerState> emit,
-  ) async {
-    _selectedCustomer = event.customer;
-    emit(CustomerSelectedState(event.customer));
   }
 
   Future<void> _onCustomerAutocompleteRequested(
@@ -143,6 +143,9 @@ class CustomerBloc extends Bloc<CustomerEvent, CustomerState> {
         suggestions: suggestions,
         term: event.term,
       ));
+    } on UnauthorizedException catch (e) {
+      // Redirección automática
+      print('🔓 Sesión expirada detectada en autocomplete');
     } catch (e) {
       emit(CustomerError('Error en autocompletado: ${e.toString()}'));
     }
@@ -158,9 +161,20 @@ class CustomerBloc extends Bloc<CustomerEvent, CustomerState> {
       final customer = await CustomerService.getCustomerByCode(event.cardCode);
       
       emit(CustomerDetailLoaded(customer));
+    } on UnauthorizedException catch (e) {
+      // Redirección automática
+      print('🔓 Sesión expirada detectada en get by code');
     } catch (e) {
       emit(CustomerError('Cliente no encontrado: ${e.toString()}'));
     }
+  }
+
+  Future<void> _onCustomerSelected(
+    CustomerSelected event,
+    Emitter<CustomerState> emit,
+  ) async {
+    _selectedCustomer = event.customer;
+    emit(CustomerSelectedState(event.customer));
   }
 
   void _onCustomerSearchCleared(

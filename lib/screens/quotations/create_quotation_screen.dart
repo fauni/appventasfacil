@@ -1,11 +1,17 @@
-// lib/screens/create_quotation_screen.dart - Updated with Customer Selection
+// lib/screens/create_quotation_screen_with_uom.dart
+// Versión actualizada con selección de unidades de medida
+import 'package:appventas/blocs/customer/customer_bloc.dart';
 import 'package:appventas/blocs/quotations/quotations_bloc.dart';
 import 'package:appventas/blocs/quotations/quotations_event.dart';
 import 'package:appventas/blocs/quotations/quotations_state.dart';
-import 'package:appventas/blocs/customer/customer_bloc.dart';
+import 'package:appventas/blocs/uom/uom_bloc.dart';
+import 'package:appventas/blocs/uom/uom_event.dart';
+import 'package:appventas/models/quotation/quotation_line_item.dart';
 import 'package:appventas/models/sales_quotation_dto.dart';
-import 'package:appventas/models/customer.dart';
+import 'package:appventas/models/customer/customer.dart';
+import 'package:appventas/models/item/unit_of_measure.dart';
 import 'package:appventas/screens/customers/customer_selection_screen.dart';
+import 'package:appventas/widgets/uom_dropdown.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
@@ -27,7 +33,7 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
   final _latitudeController = TextEditingController();
   final _longitudeController = TextEditingController();
   
-  List<SalesQuotationLineDto> _documentLines = [];
+  List<QuotationLineItem> _documentLines = [];
   bool _isLoading = false;
   Customer? _selectedCustomer;
 
@@ -45,16 +51,24 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
 
   void _addNewLine() {
     setState(() {
-      _documentLines.add(SalesQuotationLineDto(
+      _documentLines.add(QuotationLineItem(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
         itemCode: '',
         quantity: 1.0,
         priceAfterVAT: 0.0,
-        uomEntry: 1,
+        selectedUom: null,
       ));
     });
   }
 
   void _removeLine(int index) {
+    final lineItem = _documentLines[index];
+    
+    // Limpiar UoM cache para este item si se elimina la línea
+    if (lineItem.itemCode.isNotEmpty) {
+      context.read<UomBloc>().add(UomCleared(itemCode: lineItem.itemCode));
+    }
+    
     setState(() {
       _documentLines.removeAt(index);
     });
@@ -82,22 +96,12 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
   void _createQuotation() {
     if (_formKey.currentState!.validate()) {
       if (_selectedCustomer == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Debe seleccionar un cliente'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        _showErrorMessage('Debe seleccionar un cliente');
         return;
       }
 
       if (_documentLines.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Debe agregar al menos una línea de producto'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        _showErrorMessage('Debe agregar al menos una línea de producto');
         return;
       }
 
@@ -105,12 +109,11 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
       for (int i = 0; i < _documentLines.length; i++) {
         final line = _documentLines[i];
         if (line.itemCode.isEmpty || line.quantity <= 0 || line.priceAfterVAT < 0) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Complete todos los datos de la línea ${i + 1}'),
-              backgroundColor: Colors.red,
-            ),
-          );
+          _showErrorMessage('Complete todos los datos de la línea ${i + 1}');
+          return;
+        }
+        if (line.selectedUom == null) {
+          _showErrorMessage('Seleccione la unidad de medida para la línea ${i + 1}');
           return;
         }
       }
@@ -120,22 +123,54 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
         comments: _commentsController.text.trim(),
         salesPersonCode: int.tryParse(_salesPersonController.text) ?? 1,
         uUsrventafacil: 'APP_FLUTTER',
-        uLatitud: _latitudeController.text.trim().isEmpty ? null : _latitudeController.text.trim(),
-        uLongitud: _longitudeController.text.trim().isEmpty ? null : _longitudeController.text.trim(),
         uVfTiempoEntrega: _deliveryTimeController.text.trim(),
         uVfValidezOferta: _offerValidityController.text.trim(),
         uVfFormaPago: _paymentMethodController.text.trim(),
         uFecharegistroapp: DateTime.now(),
         uHoraregistroapp: DateTime.now(),
-        documentLines: _documentLines.where((line) => line.itemCode.isNotEmpty).toList(),
+        documentLines: _documentLines.map((line) => SalesQuotationLineDto(
+          itemCode: line.itemCode,
+          quantity: line.quantity,
+          priceAfterVAT: line.priceAfterVAT,
+          uomEntry: line.selectedUom!.uomEntry,
+        )).toList(),
       );
 
       context.read<QuotationsBloc>().add(QuotationCreateRequested(quotationDto));
     }
   }
 
+  void _showErrorMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
+
   double _calculateTotal() {
     return _documentLines.fold(0.0, (sum, line) => sum + (line.quantity * line.priceAfterVAT));
+  }
+
+  void _onItemCodeChanged(int index, String itemCode) {
+    setState(() {
+      _documentLines[index] = _documentLines[index].copyWith(
+        itemCode: itemCode,
+        selectedUom: null, // Reset UoM when item changes
+      );
+    });
+
+    // Cargar UoMs para el nuevo item si no está vacío
+    if (itemCode.isNotEmpty) {
+      context.read<UomBloc>().add(UomLoadRequested(itemCode));
+    }
+  }
+
+  void _onUomChanged(int index, UnitOfMeasure? uom) {
+    setState(() {
+      _documentLines[index] = _documentLines[index].copyWith(selectedUom: uom);
+    });
   }
 
   @override
@@ -683,12 +718,9 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 hintText: 'Ej: A00001',
+                helperText: 'Código del producto en SAP',
               ),
-              onChanged: (value) {
-                setState(() {
-                  _documentLines[index] = _documentLines[index].copyWith(itemCode: value);
-                });
-              },
+              onChanged: (value) => _onItemCodeChanged(index, value),
               validator: (value) {
                 if (value == null || value.isEmpty) {
                   return 'El código del producto es requerido';
@@ -730,32 +762,14 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  flex: 1,
-                  child: TextFormField(
-                    initialValue: line.uomEntry.toString(),
-                    decoration: InputDecoration(
-                      labelText: 'UoM *',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      helperText: 'ID UoM',
-                    ),
-                    keyboardType: TextInputType.number,
-                    onChanged: (value) {
-                      final uom = int.tryParse(value) ?? 1;
-                      setState(() {
-                        _documentLines[index] = _documentLines[index].copyWith(uomEntry: uom);
-                      });
-                    },
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Requerido';
-                      }
-                      if (int.tryParse(value) == null || int.parse(value) <= 0) {
-                        return 'UoM inválido';
-                      }
-                      return null;
-                    },
+                  flex: 2,
+                  child: UomDropdown(
+                    itemCode: line.itemCode,
+                    selectedUom: line.selectedUom,
+                    onChanged: (uom) => _onUomChanged(index, uom),
+                    enabled: line.itemCode.isNotEmpty,
+                    label: 'UoM',
+                    isRequired: true,
                   ),
                 ),
               ],
@@ -816,9 +830,38 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
                 ],
               ),
             ),
+            
+            // Mostrar información de la UoM seleccionada
+            if (line.selectedUom != null) ...[
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.green[50],
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: Colors.green[200]!),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.info, size: 16, color: Colors.green[600]),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'UoM: ${line.selectedUom!.displayText} (${line.selectedUom!.baseQty}:${line.selectedUom!.altQty})',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.green[700],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ],
         ),
       ),
     );
   }
 }
+

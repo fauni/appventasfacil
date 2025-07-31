@@ -1,7 +1,8 @@
 import 'dart:convert';
 
-import 'package:appventas/models/customer.dart';
+import 'package:appventas/models/customer/customer.dart';
 import 'package:appventas/services/api_service.dart';
+import 'package:appventas/services/http_client.dart';
 import 'package:appventas/services/storage_service.dart';
 import 'package:http/http.dart' as http;
 
@@ -16,7 +17,7 @@ class CustomerService {
       final token = await StorageService.getToken();
       
       if (token == null) {
-        throw Exception('No authentication token found');
+        throw UnauthorizedException('No hay token de autenticación');
       }
 
       final uri = Uri.parse('${ApiService.baseUrl}/Customer/search').replace(
@@ -27,13 +28,16 @@ class CustomerService {
         },
       );
 
-      final response = await http.get(uri, headers: ApiService.getHeaders(token: token));
+      final response = await HttpClient.get(uri.toString(), token: token);
       if (response.statusCode == 200) {
         final jsonResponse = jsonDecode(response.body);
         return CustomerSearchResponse.fromJson(jsonResponse['data']);
       } else {
         throw Exception('Failed to search customers');
       }
+    } on UnauthorizedException{
+      // Re-lanzar para que el Bloc lo maneje
+      rethrow;
     } catch (e) {
       throw Exception('Network error: $e');
     }
@@ -44,20 +48,21 @@ class CustomerService {
     try {
       final token = await StorageService.getToken();
       if (token == null) {
-        throw Exception('No authentication token found');
+        throw UnauthorizedException('No hay token de autenticación');
       }
 
-      final response = await http.get(
-        Uri.parse('${ApiService.baseUrl}/Customer/$cardCode'),
-        headers: ApiService.getHeaders(token: token),
-      );
+      final response = await HttpClient.get('${ApiService.baseUrl}/Customer/$cardCode', token: token);
 
       if (response.statusCode == 200) {
         final jsonResponse = jsonDecode(response.body);
         return Customer.fromJson(jsonResponse['data']);
-      } else {
-        throw Exception('Customer not found');
+      } else if (response.statusCode == 404){
+        throw Exception('Cliente no encontrado');
+      }else {
+        throw Exception('Error al obtener cliente: ${response.statusCode}');
       }
+    } on UnauthorizedException {
+      rethrow;
     } catch (e) {
       throw Exception('Network error: $e');
     }
@@ -68,23 +73,22 @@ class CustomerService {
     try {
       final token = await StorageService.getToken();
       if (token == null) {
-        throw Exception('No authentication token found');
+        throw UnauthorizedException('No hay token de autenticación');
       }
 
-      final response = await http.get(
-        Uri.parse('${ApiService.baseUrl}/Customer'),
-        headers: ApiService.getHeaders(token: token),
-      );
+      final response = await HttpClient.get('${ApiService.baseUrl}/Customer', token: token);
 
       if (response.statusCode == 200) {
         final jsonResponse = jsonDecode(response.body);
         final List<dynamic> data = jsonResponse['data'];
         return data.map((json) => Customer.fromJson(json)).toList();
       } else {
-        throw Exception('Failed to load customers');
+        throw Exception('Error al cargar clientes: ${response.statusCode}');
       }
+    } on UnauthorizedException{
+      rethrow;
     } catch (e) {
-      throw Exception('Network error: $e');
+      throw Exception('Error de red: $e');
     }
   }
 
@@ -93,24 +97,26 @@ class CustomerService {
     try {
       final token = await StorageService.getToken();
       if (token == null) {
-        throw Exception('No authentication token found');
+        throw UnauthorizedException('No hay token de autenticación');
       }
 
       final uri = Uri.parse('${ApiService.baseUrl}/Customer/autocomplete').replace(
         queryParameters: {'term': term},
       );
 
-      final response = await http.get(uri, headers: ApiService.getHeaders(token: token));
+      final response = await HttpClient.get(uri.toString(), token: token);
 
       if (response.statusCode == 200) {
         final jsonResponse = jsonDecode(response.body);
         final List<dynamic> data = jsonResponse['data'];
         return data.map((json) => CustomerAutocomplete.fromJson(json)).toList();
       } else {
-        throw Exception('Failed to get autocomplete data');
+        throw Exception('Error en autocompletado: ${response.statusCode}');
       }
+    } on UnauthorizedException{
+      rethrow;
     } catch (e) {
-      throw Exception('Network error: $e');
+      throw Exception('Error de red: $e');
     }
   }
 }

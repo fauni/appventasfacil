@@ -4,7 +4,7 @@ import 'package:appventas/blocs/quotations/quotations_bloc.dart';
 import 'package:appventas/blocs/quotations/quotations_event.dart';
 import 'package:appventas/blocs/quotations/quotations_state.dart';
 import 'package:appventas/models/sales_quotation_dto.dart';
-import 'package:appventas/models/customer.dart';
+import 'package:appventas/models/customer/customer.dart';
 import 'package:appventas/widgets/customer_autocomplete_field.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';

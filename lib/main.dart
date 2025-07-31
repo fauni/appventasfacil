@@ -1,4 +1,3 @@
-// lib/main.dart
 import 'package:appventas/blocs/quotations/quotations_bloc.dart';
 import 'package:appventas/blocs/sales/sales_bloc.dart';
 import 'package:flutter/material.dart';
@@ -8,8 +7,11 @@ import 'blocs/auth/auth_bloc.dart';
 import 'blocs/auth/auth_event.dart';
 import 'blocs/auth/auth_state.dart';
 import 'blocs/customer/customer_bloc.dart';
+import 'blocs/uom/uom_bloc.dart';
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
+
+import 'package:appventas/services/http_client.dart';
 
 void main() {
   runApp(const MyApp());
@@ -22,11 +24,17 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
-        BlocProvider<AuthBloc>(create: (context) => AuthBloc()..add(AuthStatusChecked())),
+        BlocProvider<AuthBloc>(
+          create: (context){
+            final authBloc = AuthBloc()..add(AuthStatusChecked());
+            HttpClient.setAuthBloc(authBloc);
+            return authBloc;
+          }
+        ),
         BlocProvider<QuotationsBloc>(create: (context) => QuotationsBloc()),
         BlocProvider<SalesBloc>(create: (context) => SalesBloc()),
         BlocProvider<CustomerBloc>(create: (context) => CustomerBloc()), // Nuevo BlocProvider
-
+        BlocProvider<UomBloc>(create: (context) => UomBloc()), // Nuevo BlocProvider
       ],
       child: MaterialApp(
         title: 'SAP Sales App',

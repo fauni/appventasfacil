@@ -1,6 +1,6 @@
 // lib/blocs/customer/customer_state.dart
 import 'package:equatable/equatable.dart';
-import 'package:appventas/models/customer.dart';
+import 'package:appventas/models/customer/customer.dart';
 
 abstract class CustomerState extends Equatable {
   const CustomerState();

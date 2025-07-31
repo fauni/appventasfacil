@@ -1,7 +1,7 @@
 // lib/screens/customer_selection_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:appventas/models/customer.dart';
+import 'package:appventas/models/customer/customer.dart';
 import 'package:appventas/blocs/customer/customer_bloc.dart';
 import 'package:appventas/blocs/customer/customer_event.dart';
 import 'package:appventas/blocs/customer/customer_state.dart';

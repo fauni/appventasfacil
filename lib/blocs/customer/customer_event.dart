@@ -1,6 +1,6 @@
 // lib/blocs/customer/customer_event.dart
 import 'package:equatable/equatable.dart';
-import 'package:appventas/models/customer.dart';
+import 'package:appventas/models/customer/customer.dart';
 
 abstract class CustomerEvent extends Equatable {
   const CustomerEvent();
