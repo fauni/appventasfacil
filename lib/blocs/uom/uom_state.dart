@@ -30,15 +30,17 @@ class UomLoaded extends UomState {
     this.selectedUom,
   });
 
+  // FIX: Corregir el copyWith para preservar selectedUom
   UomLoaded copyWith({
     String? itemCode,
     List<UnitOfMeasure>? unitOfMeasures,
     UnitOfMeasure? selectedUom,
+    bool updateSelectedUom = false, // Flag para controlar actualización
   }) {
     return UomLoaded(
       itemCode: itemCode ?? this.itemCode,
       unitOfMeasures: unitOfMeasures ?? this.unitOfMeasures,
-      selectedUom: selectedUom,
+      selectedUom: updateSelectedUom ? selectedUom : this.selectedUom,
     );
   }
 

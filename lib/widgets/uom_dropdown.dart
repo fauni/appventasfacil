@@ -75,7 +75,7 @@ class UomDropdown extends StatelessWidget {
       value: currentSelected,
       decoration: InputDecoration(
         labelText: isRequired ? '$label *' : label,
-        helperText: helperText ?? 'Unidad de medida del producto',
+        helperText: helperText ?? '',// 'Unidad de medida del producto',
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
         ),

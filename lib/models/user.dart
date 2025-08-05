@@ -4,6 +4,10 @@ class User {
   final String username;
   final String email;
   final String type;
+  final int? employeeCodeSap;
+  final String? almacenCode;
+  final String? userSap;
+  final String? passwordSap;
 
   User({
     required this.id,
@@ -11,6 +15,10 @@ class User {
     required this.username,
     required this.email,
     required this.type,
+    this.employeeCodeSap,
+    this.almacenCode,
+    this.userSap,
+    this.passwordSap
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
@@ -20,6 +28,10 @@ class User {
       username: json['username'],
       email: json['email'],
       type: json['type'],
+      employeeCodeSap: json['employeeCodeSap'],
+      almacenCode: json['almacenCode'],
+      userSap: json['userSap'],
+      passwordSap: json['passwordSap'],
     );
   }
 
@@ -30,8 +42,19 @@ class User {
       'username': username,
       'email': email,
       'type': type,
+      'employeeCodeSap': employeeCodeSap,
+      'almacenCode': almacenCode,
+      'userSap': userSap,
+      'passwordSap': passwordSap,
     };
   }
+
+  // Método de conveniencia para verificar si tiene configuración SAP
+  bool get hasSapConfiguration => employeeCodeSap != null && employeeCodeSap! > 0;
+  
+  // Método para obtener el código de empleado como string para mostrar
+  String get employeeCodeDisplay => employeeCodeSap?.toString() ?? '';
 }
+
 
   

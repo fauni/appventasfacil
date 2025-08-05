@@ -1,10 +1,10 @@
 import 'dart:convert';
-import 'package:appventas/models/sales_quotation_dto.dart';
+import 'package:appventas/models/quotation/sales_quotation_dto.dart';
 import 'package:appventas/services/http_client.dart';
 import 'package:appventas/services/storage_service.dart';
 import 'package:http/http.dart' as http;
 
-import 'package:appventas/models/sales_quotation.dart';
+import 'package:appventas/models/quotation/sales_quotation.dart';
 import 'package:appventas/services/api_service.dart';
 
 

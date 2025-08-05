@@ -5,17 +5,23 @@ import 'package:appventas/blocs/quotations/quotations_state.dart';
 import 'package:appventas/blocs/item/item_bloc.dart';
 import 'package:appventas/blocs/uom/uom_bloc.dart';
 import 'package:appventas/blocs/uom/uom_event.dart';
+import 'package:appventas/blocs/terms_conditions/terms_conditions_bloc.dart';
+import 'package:appventas/blocs/terms_conditions/terms_conditions_event.dart';
+import 'package:appventas/blocs/terms_conditions/terms_conditions_state.dart';
 import 'package:appventas/models/customer/customer.dart';
 import 'package:appventas/models/item/item.dart';
 import 'package:appventas/models/item/unit_of_measure.dart';
 import 'package:appventas/models/quotation/quotation_line_item.dart';
-import 'package:appventas/models/sales_quotation_dto.dart';
+import 'package:appventas/models/quotation/sales_quotation_dto.dart';
+import 'package:appventas/models/quotation/terms_conditions.dart';
 import 'package:appventas/screens/customers/customer_selection_screen.dart';
 import 'package:appventas/screens/items/item_selection_screen.dart';
-import 'package:appventas/widgets/uom_dropdown.dart';
+import 'package:appventas/services/current_user_service.dart';
+import 'package:appventas/widgets/uom_selector_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
+import 'package:geolocator/geolocator.dart';
 
 class CreateQuotationScreen extends StatefulWidget {
   const CreateQuotationScreen({Key? key}) : super(key: key);
@@ -28,23 +34,130 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
   final _formKey = GlobalKey<FormState>();
   final _commentsController = TextEditingController();
   final _salesPersonController = TextEditingController();
-  final _deliveryTimeController = TextEditingController();
-  final _offerValidityController = TextEditingController();
-  final _paymentMethodController = TextEditingController();
   final _latitudeController = TextEditingController();
   final _longitudeController = TextEditingController();
+
+  final _currentUserService = CurrentUserService();
   
   List<QuotationLineItem> _documentLines = [];
   bool _isLoading = false;
+  bool _isLoadingLocation = false;
+  bool _hasLocationData = false;
   Customer? _selectedCustomer;
+
+  @override
+  void initState() {
+    super.initState();
+    // Cargar términos y condiciones al iniciar la pantalla
+    context.read<TermsConditionsBloc>().add(TermsConditionsLoadRequested());
+    // Obtener ubicación automáticamente
+    _getCurrentLocation();
+    // Inicializar el código de vendedor con los datos del usuario actual
+    _initializeSalesPersonCode();
+  }
+
+  // Método para inicializar el código de vendedor
+  void _initializeSalesPersonCode() async {
+    await _currentUserService.loadCurrentUser();
+
+    final currentUser = _currentUserService.currentUser;
+    if (currentUser != null && currentUser.hasSapConfiguration) {
+      // Si hay datos del vendedor SAP, mostrar solo el nombre
+      if (_currentUserService.hasSalesPersonData) {
+        _salesPersonController.text = _currentUserService.salesPersonFieldDisplay;
+      } else {
+        // Si no hay datos del vendedor, mostrar solo el código
+        _salesPersonController.text = currentUser.employeeCodeDisplay;
+      }
+    }
+  }
+
+  // Método para obtener la ubicación actual
+  Future<void> _getCurrentLocation() async {
+    setState(() {
+      _isLoadingLocation = true;
+    });
+
+    try {
+      // Verificar si el servicio de ubicación está habilitado
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        _showLocationMessage('Los servicios de ubicación están deshabilitados.');
+        return;
+      }
+
+      // Verificar permisos
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          _showLocationMessage('Permisos de ubicación denegados.');
+          return;
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        _showLocationMessage('Los permisos de ubicación están permanentemente denegados.');
+        return;
+      }
+
+      // Obtener la posición actual
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+        timeLimit: Duration(seconds: 15),
+      );
+
+      // Llenar los campos automáticamente
+      setState(() {
+        _latitudeController.text = position.latitude.toStringAsFixed(6);
+        _longitudeController.text = position.longitude.toStringAsFixed(6);
+        _hasLocationData = true;
+      });
+
+      _showLocationMessage('Ubicación obtenida correctamente', isSuccess: true);
+
+    } catch (e) {
+      _showLocationMessage('Error al obtener ubicación: ${e.toString()}');
+      setState(() {
+        _hasLocationData = false;
+      });
+    } finally {
+      setState(() {
+        _isLoadingLocation = false;
+      });
+    }
+  }
+
+  // Método para recargar ubicación manualmente
+  Future<void> _refreshLocation() async {
+    await _getCurrentLocation();
+  }
+
+  void _showLocationMessage(String message, {bool isSuccess = false}) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(
+                isSuccess ? Icons.check_circle : Icons.warning,
+                color: Colors.white,
+              ),
+              SizedBox(width: 8),
+              Expanded(child: Text(message)),
+            ],
+          ),
+          backgroundColor: isSuccess ? Colors.green : Colors.orange,
+          duration: Duration(seconds: 3),
+        ),
+      );
+    }
+  }
 
   @override
   void dispose() {
     _commentsController.dispose();
     _salesPersonController.dispose();
-    _deliveryTimeController.dispose();
-    _offerValidityController.dispose();
-    _paymentMethodController.dispose();
     _latitudeController.dispose();
     _longitudeController.dispose();
     super.dispose();
@@ -64,13 +177,6 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
   }
 
   void _removeLine(int index) {
-    final lineItem = _documentLines[index];
-    
-    // Limpiar UoM cache para este item si se elimina la línea
-    if (lineItem.itemCode.isNotEmpty) {
-      context.read<UomBloc>().add(UomCleared(itemCode: lineItem.itemCode));
-    }
-    
     setState(() {
       _documentLines.removeAt(index);
     });
@@ -121,7 +227,7 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
     }
   }
 
-  void _onUomChanged(int index, UnitOfMeasure? uom) {
+  void _onUomSelected(int index, UnitOfMeasure? uom) {
     setState(() {
       _documentLines[index] = _documentLines[index].copyWith(selectedUom: uom);
     });
@@ -156,16 +262,33 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
         }
       }
 
+      // Obtener los valores seleccionados de términos y condiciones
+      final termsConditionsBloc = context.read<TermsConditionsBloc>();
+      
+      // Determinar el código de vendedor a enviar
+      int salesPersonCode;
+      if (_currentUserService.hasSalesPersonData) {
+        // Si tenemos datos del vendedor SAP, usar el código del empleado
+        salesPersonCode = _currentUserService.employeeCodeSap ?? 1;
+      } else {
+        // Si no hay datos SAP, usar lo que el usuario ingresó
+        salesPersonCode = int.tryParse(_salesPersonController.text) ?? 1;
+      }
+      
+    // Obtener el username del usuario actual
+    final currentUser = _currentUserService.currentUser;
+    final username = currentUser?.username ?? 'APP_FLUTTER';
+
       final quotationDto = SalesQuotationDto(
         cardCode: _selectedCustomer!.cardCode,
         comments: _commentsController.text.trim(),
-        salesPersonCode: int.tryParse(_salesPersonController.text) ?? 1,
-        uUsrventafacil: 'APP_FLUTTER',
+        salesPersonCode: salesPersonCode,
+        uUsrventafacil: username,
         uLatitud: _latitudeController.text.trim().isEmpty ? null : _latitudeController.text.trim(),
         uLongitud: _longitudeController.text.trim().isEmpty ? null : _longitudeController.text.trim(),
-        uVfTiempoEntrega: _deliveryTimeController.text.trim(),
-        uVfValidezOferta: _offerValidityController.text.trim(),
-        uVfFormaPago: _paymentMethodController.text.trim(),
+        uVfTiempoEntrega: termsConditionsBloc.selectedDeliveryTime?.code ?? '',
+        uVfValidezOferta: termsConditionsBloc.selectedOfferValidity?.code ?? '',
+        uVfFormaPago: termsConditionsBloc.selectedPaymentMethod?.code ?? '',
         uFecharegistroapp: DateTime.now(),
         uHoraregistroapp: DateTime.now(),
         documentLines: _documentLines.map((line) => SalesQuotationLineDto(
@@ -214,35 +337,51 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
             ),
         ],
       ),
-      body: BlocListener<QuotationsBloc, QuotationsState>(
-        listener: (context, state) {
-          if (state is QuotationsLoading) {
-            setState(() {
-              _isLoading = true;
-            });
-          } else {
-            setState(() {
-              _isLoading = false;
-            });
-          }
-    
-          if (state is QuotationCreated) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Cotización creada exitosamente'),
-                backgroundColor: Colors.green,
-              ),
-            );
-            Navigator.of(context).pop();
-          } else if (state is QuotationsError) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.message),
-                backgroundColor: Colors.red,
-              ),
-            );
-          }
-        },
+      body: MultiBlocListener(
+        listeners: [
+          BlocListener<QuotationsBloc, QuotationsState>(
+            listener: (context, state) {
+              if (state is QuotationsLoading) {
+                setState(() {
+                  _isLoading = true;
+                });
+              } else {
+                setState(() {
+                  _isLoading = false;
+                });
+              }
+        
+              if (state is QuotationCreated) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Cotización creada exitosamente'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+                Navigator.of(context).pop();
+              } else if (state is QuotationsError) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(state.message),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            },
+          ),
+          BlocListener<TermsConditionsBloc, TermsConditionsState>(
+            listener: (context, state) {
+              if (state is TermsConditionsError) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Error cargando términos: ${state.message}'),
+                    backgroundColor: Colors.orange,
+                  ),
+                );
+              }
+            },
+          ),
+        ],
         child: Stack(
           children: [
             Form(
@@ -300,7 +439,7 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
                       ],
                     ),
                   ),
-    
+        
                   // Form Content (Scrollable)
                   Expanded(
                     child: SingleChildScrollView(
@@ -320,14 +459,14 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
                           
                           const SizedBox(height: 24),
                           
-                          // Additional Fields
+                          // Terms and Conditions
                           _buildSectionHeader('Términos y Condiciones'),
                           _buildTermsSection(),
                           
                           const SizedBox(height: 24),
                           
-                          // Location (Optional)
-                          _buildSectionHeader('Ubicación (Opcional)'),
+                          // Location (Hidden fields but automatic)
+                          _buildSectionHeader('Ubicación GPS'),
                           _buildLocationSection(),
                           
                           const SizedBox(height: 24),
@@ -517,20 +656,43 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
             TextFormField(
               controller: _salesPersonController,
               decoration: InputDecoration(
-                labelText: 'Código de Vendedor *',
+                labelText: 'Código de Vendedor (Empleado SAP) *',
                 prefixIcon: const Icon(Icons.badge),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
-                hintText: 'Ej: 1',
-                helperText: 'ID del vendedor en SAP',
+                hintText: _currentUserService.hasSalesPersonData
+                    ? _currentUserService.salesPersonFieldDisplay
+                    : _currentUserService.hasSapConfiguration 
+                        ? 'Código: ${_currentUserService.employeeCodeDisplay}'
+                        : 'Ej: 1',
+                helperText: _currentUserService.hasSalesPersonData
+                    ? 'Vendedor obtenido desde SAP'
+                    : _currentUserService.hasSapConfiguration
+                        ? 'Código obtenido del perfil del usuario'
+                        : 'ID del vendedor en SAP',
+                suffixIcon: _currentUserService.hasSapConfiguration
+                    ? Icon(Icons.verified_user, color: Colors.green[600])
+                    : null,
               ),
-              keyboardType: TextInputType.number,
+              keyboardType: _currentUserService.hasSalesPersonData 
+                  ? TextInputType.text 
+                  : TextInputType.number,
+              readOnly: _currentUserService.hasSapConfiguration,
+              style: TextStyle(
+                color: _currentUserService.hasSapConfiguration 
+                    ? Colors.green[700] 
+                    : null,
+                fontWeight: _currentUserService.hasSapConfiguration 
+                    ? FontWeight.bold 
+                    : null,
+              ),
               validator: (value) {
                 if (value == null || value.isEmpty) {
                   return 'El código de vendedor es requerido';
                 }
-                if (int.tryParse(value) == null) {
+                // Si no hay datos de vendedor SAP, validar que sea número
+                if (!_currentUserService.hasSalesPersonData && int.tryParse(value) == null) {
                   return 'Debe ser un número válido';
                 }
                 return null;
@@ -557,51 +719,209 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
   }
 
   Widget _buildTermsSection() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            TextFormField(
-              controller: _deliveryTimeController,
-              decoration: InputDecoration(
-                labelText: 'Tiempo de Entrega',
-                prefixIcon: const Icon(Icons.schedule),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                hintText: 'Ej: 5-7 días hábiles',
+    return BlocBuilder<TermsConditionsBloc, TermsConditionsState>(
+      builder: (context, state) {
+        if (state is TermsConditionsLoading) {
+          return Card(
+            child: Padding(
+              padding: const EdgeInsets.all(32),
+              child: Column(
+                children: [
+                  const CircularProgressIndicator(),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Cargando términos y condiciones...',
+                    style: TextStyle(
+                      color: Colors.grey[600],
+                      fontSize: 16,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 16),
-            
-            TextFormField(
-              controller: _offerValidityController,
-              decoration: InputDecoration(
-                labelText: 'Validez de la Oferta',
-                prefixIcon: const Icon(Icons.calendar_today),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                hintText: 'Ej: 30 días',
+          );
+        }
+
+        if (state is TermsConditionsError) {
+          return Card(
+            child: Padding(
+              padding: const EdgeInsets.all(32),
+              child: Column(
+                children: [
+                  Icon(
+                    Icons.error_outline,
+                    color: Colors.red[400],
+                    size: 48,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Error al cargar términos y condiciones',
+                    style: TextStyle(
+                      color: Colors.red[600],
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    state.message,
+                    style: TextStyle(
+                      color: Colors.grey[600],
+                      fontSize: 14,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      context.read<TermsConditionsBloc>().add(TermsConditionsLoadRequested());
+                    },
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Reintentar'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue[600],
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 16),
-            
-            TextFormField(
-              controller: _paymentMethodController,
-              decoration: InputDecoration(
-                labelText: 'Forma de Pago',
-                prefixIcon: const Icon(Icons.payment),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                hintText: 'Ej: Contado, Crédito 30 días',
+          );
+        }
+
+        if (state is! TermsConditionsLoaded) {
+          return Card(
+            child: Padding(
+              padding: const EdgeInsets.all(32),
+              child: Column(
+                children: [
+                  Icon(
+                    Icons.info_outline,
+                    color: Colors.blue[400],
+                    size: 48,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'No hay datos disponibles',
+                    style: TextStyle(
+                      color: Colors.grey[600],
+                      fontSize: 16,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      context.read<TermsConditionsBloc>().add(TermsConditionsLoadRequested());
+                    },
+                    icon: const Icon(Icons.download),
+                    label: const Text('Cargar términos'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue[600],
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
+                ],
               ),
             ),
-          ],
+          );
+        }
+
+        final termsConditions = state.termsConditions;
+
+        return Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                // Forma de Pago
+                _buildTermDropdown<PaymentMethod>(
+                  label: 'Forma de Pago',
+                  icon: Icons.payment,
+                  items: termsConditions.paymentMethods,
+                  selectedItem: state.selectedPaymentMethod,
+                  onChanged: (paymentMethod) {
+                    context.read<TermsConditionsBloc>().add(
+                      PaymentMethodSelected(paymentMethod!),
+                    );
+                  },
+                  itemBuilder: (paymentMethod) => paymentMethod.displayText,
+                ),
+                const SizedBox(height: 16),
+                
+                // Tiempo de Entrega
+                _buildTermDropdown<DeliveryTime>(
+                  label: 'Tiempo de Entrega',
+                  icon: Icons.schedule,
+                  items: termsConditions.deliveryTimes,
+                  selectedItem: state.selectedDeliveryTime,
+                  onChanged: (deliveryTime) {
+                    context.read<TermsConditionsBloc>().add(
+                      DeliveryTimeSelected(deliveryTime!),
+                    );
+                  },
+                  itemBuilder: (deliveryTime) => deliveryTime.displayText,
+                ),
+                const SizedBox(height: 16),
+                
+                // Validez de la Oferta
+                _buildTermDropdown<OfferValidity>(
+                  label: 'Validez de la Oferta',
+                  icon: Icons.calendar_today,
+                  items: termsConditions.offerValidities,
+                  selectedItem: state.selectedOfferValidity,
+                  onChanged: (offerValidity) {
+                    context.read<TermsConditionsBloc>().add(
+                      OfferValiditySelected(offerValidity!),
+                    );
+                  },
+                  itemBuilder: (offerValidity) => offerValidity.displayText,
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildTermDropdown<T>({
+    required String label,
+    required IconData icon,
+    required List<T> items,
+    required T? selectedItem,
+    required ValueChanged<T?> onChanged,
+    required String Function(T) itemBuilder,
+  }) {
+    return DropdownButtonFormField<T>(
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: Icon(icon),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
         ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
       ),
+      value: selectedItem,
+      items: items.map((item) {
+        return DropdownMenuItem<T>(
+          value: item,
+          child: Text(
+            itemBuilder(item),
+            style: const TextStyle(fontSize: 14),
+          ),
+        );
+      }).toList(),
+      onChanged: onChanged,
+      hint: Text('Seleccionar $label'),
+      isExpanded: true,
+      validator: (value) {
+        if (value == null) {
+          return 'Seleccione una opción';
+        }
+        return null;
+      },
     );
   }
 
@@ -609,50 +929,56 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
-        child: Column(
+        child: Row(
           children: [
-            Row(
-              children: [
-                Expanded(
-                  child: TextFormField(
-                    controller: _latitudeController,
-                    decoration: InputDecoration(
-                      labelText: 'Latitud',
-                      prefixIcon: const Icon(Icons.location_on),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      hintText: 'Ej: -16.5000',
-                    ),
-                    keyboardType: TextInputType.numberWithOptions(decimal: true),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: TextFormField(
-                    controller: _longitudeController,
-                    decoration: InputDecoration(
-                      labelText: 'Longitud',
-                      prefixIcon: const Icon(Icons.location_on),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      hintText: 'Ej: -68.1500',
-                    ),
-                    keyboardType: TextInputType.numberWithOptions(decimal: true),
-                  ),
-                ),
-              ],
+            // Icono de estado
+            Icon(
+              _hasLocationData ? Icons.check_circle : Icons.location_off,
+              color: _hasLocationData ? Colors.green[600] : Colors.red[600],
+              size: 24,
             ),
-            const SizedBox(height: 8),
-            Text(
-              'La ubicación se registrará automáticamente si no se especifica',
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey[600],
-                fontStyle: FontStyle.italic,
+            const SizedBox(width: 12),
+            
+            // Texto de estado
+            Expanded(
+              child: Text(
+                _hasLocationData 
+                    ? 'Ubicación GPS obtenida' 
+                    : _isLoadingLocation 
+                        ? 'Obteniendo ubicación...'
+                        : 'No se pudo obtener la ubicación',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  color: _hasLocationData ? Colors.green[700] : Colors.red[700],
+                ),
               ),
             ),
+            
+            // Botón o loading
+            if (_isLoadingLocation)
+              SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.blue[600]!),
+                ),
+              )
+            else if (!_hasLocationData)
+              ElevatedButton.icon(
+                onPressed: _refreshLocation,
+                icon: const Icon(Icons.my_location, size: 18),
+                label: const Text('Reintentar'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue[600],
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ),
           ],
         ),
       ),
@@ -670,24 +996,26 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
                 children: [
                   Icon(
                     Icons.inventory_2_outlined,
-                    size: 48,
+                    size: 64,
                     color: Colors.grey[400],
                   ),
                   const SizedBox(height: 16),
                   Text(
                     'No hay productos agregados',
                     style: TextStyle(
-                      fontSize: 16,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
                       color: Colors.grey[600],
                     ),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Presiona el botón + para agregar productos',
+                    'Presiona el botón + para agregar productos a la cotización',
                     style: TextStyle(
                       fontSize: 14,
                       color: Colors.grey[500],
                     ),
+                    textAlign: TextAlign.center,
                   ),
                 ],
               ),
@@ -705,7 +1033,8 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
     final line = _documentLines[index];
 
     return Card(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: 16),
+      elevation: 3,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -714,37 +1043,47 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'Producto ${index + 1}',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.blue[100],
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    'Producto ${index + 1}',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.blue[700],
+                    ),
                   ),
                 ),
                 IconButton(
                   onPressed: () => _removeLine(index),
-                  icon: const Icon(Icons.delete),
-                  color: Colors.red,
+                  icon: const Icon(Icons.delete_outline),
+                  color: Colors.red[400],
+                  tooltip: 'Eliminar producto',
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             
             // Item Selection Button
             InkWell(
               onTap: () => _selectItem(index),
               child: Container(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   border: Border.all(
                     color: line.selectedItem == null 
                         ? Colors.red.withOpacity(0.5) 
-                        : Colors.blue[200]!,
+                        : Colors.green[300]!,
+                    width: 2,
                   ),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(12),
                   color: line.selectedItem == null 
                       ? Colors.grey[50] 
-                      : Colors.blue[50],
+                      : Colors.green[50],
                 ),
                 child: line.selectedItem == null
                     ? Row(
@@ -752,8 +1091,9 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
                           Icon(
                             Icons.add_shopping_cart,
                             color: Colors.grey[600],
+                            size: 28,
                           ),
-                          const SizedBox(width: 12),
+                          const SizedBox(width: 16),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -761,7 +1101,7 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
                                 Text(
                                   'Seleccionar Item',
                                   style: TextStyle(
-                                    fontSize: 14,
+                                    fontSize: 16,
                                     fontWeight: FontWeight.bold,
                                     color: Colors.grey[700],
                                   ),
@@ -769,7 +1109,7 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
                                 Text(
                                   'Toca para buscar y seleccionar un item',
                                   style: TextStyle(
-                                    fontSize: 12,
+                                    fontSize: 14,
                                     color: Colors.grey[600],
                                   ),
                                 ),
@@ -779,22 +1119,25 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
                           Icon(
                             Icons.arrow_forward_ios,
                             color: Colors.grey[400],
-                            size: 16,
+                            size: 18,
                           ),
                         ],
                       )
                     : Row(
                         children: [
-                          CircleAvatar(
-                            backgroundColor: Colors.blue[600],
-                            radius: 16,
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.green[600],
+                              borderRadius: BorderRadius.circular(8),
+                            ),
                             child: const Icon(
                               Icons.inventory_2,
                               color: Colors.white,
-                              size: 16,
+                              size: 20,
                             ),
                           ),
-                          const SizedBox(width: 12),
+                          const SizedBox(width: 16),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -802,154 +1145,183 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
                                 Text(
                                   line.selectedItem!.displayName,
                                   style: const TextStyle(
-                                    fontSize: 14,
+                                    fontSize: 16,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
                                 Text(
                                   'Código: ${line.selectedItem!.itemCode}',
                                   style: TextStyle(
-                                    fontSize: 12,
+                                    fontSize: 14,
                                     color: Colors.grey[600],
                                   ),
                                 ),
                               ],
                             ),
                           ),
-                          Text(
-                            'Cambiar',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.blue[600],
-                            ),
+                          Column(
+                            children: [
+                              Icon(
+                                Icons.check_circle,
+                                color: Colors.green[600],
+                                size: 20,
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Cambiar',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.green[600],
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             
-            TextFormField(
-              initialValue: line.quantity.toString(),
-              decoration: InputDecoration(
-                labelText: 'Cantidad *',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              keyboardType: TextInputType.number,
-              onChanged: (value) {
-                final quantity = double.tryParse(value) ?? 0.0;
-                setState(() {
-                  _documentLines[index] = _documentLines[index].copyWith(quantity: quantity);
-                });
-              },
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Requerido';
-                }
-                if (double.tryParse(value) == null || double.parse(value) <= 0) {
-                  return 'Cantidad inválida';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 12),
-            UomDropdown(
-              itemCode: line.itemCode,
+            // UoM Selection
+            UomSelectorButton(
+              itemCode: line.selectedItem?.itemCode ?? '',
+              itemName: line.selectedItem?.displayName ?? '',
               selectedUom: line.selectedUom,
-              onChanged: (uom) => _onUomChanged(index, uom),
+              onUomSelected: (uom) => _onUomSelected(index, uom),
               enabled: line.selectedItem != null,
-              label: 'Unidad de Medida',
               isRequired: true,
             ),
-            const SizedBox(height: 12),
-            TextFormField(
-              initialValue: line.priceAfterVAT.toString(),
-              decoration: InputDecoration(
-                labelText: 'Precio con IVA *',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
+            const SizedBox(height: 16),
+            
+            // Quantity and Price Row
+            Row(
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    initialValue: line.quantity.toString(),
+                    decoration: InputDecoration(
+                      labelText: 'Cantidad *',
+                      prefixIcon: const Icon(Icons.plus_one),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      suffixText: line.selectedUom?.uomCode ?? '',
+                      
+                    ),
+                    keyboardType: TextInputType.numberWithOptions(decimal: true),
+                    onChanged: (value) {
+                      final quantity = double.tryParse(value) ?? 0.0;
+                      // FIX: Preservar selectedUom al cambiar cantidad
+                      final currentUom = _documentLines[index].selectedUom;
+                      setState(() {
+                        _documentLines[index] = _documentLines[index].copyWith(
+                          quantity: quantity,
+                          selectedUom: currentUom, // Preservar explícitamente
+                        );
+                      });
+                    },
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Requerido';
+                      }
+                      if (double.tryParse(value) == null || double.parse(value) <= 0) {
+                        return 'Cantidad inválida';
+                      }
+                      return null;
+                    },
+                  ),
                 ),
-                prefixText: 'Bs. ',
-                helperText: 'Precio unitario incluyendo IVA',
-              ),
-              keyboardType: TextInputType.numberWithOptions(decimal: true),
-              onChanged: (value) {
-                final price = double.tryParse(value) ?? 0.0;
-                setState(() {
-                  _documentLines[index] = _documentLines[index].copyWith(priceAfterVAT: price);
-                });
-              },
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'El precio es requerido';
-                }
-                if (double.tryParse(value) == null || double.parse(value) < 0) {
-                  return 'Precio inválido';
-                }
-                return null;
-              },
+                const SizedBox(width: 16),
+                Expanded(
+                  child: TextFormField(
+                    initialValue: line.priceAfterVAT.toString(),
+                    decoration: InputDecoration(
+                      labelText: 'Precio *',
+                      prefixIcon: const Icon(Icons.money),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      prefixText: 'Bs. ',
+                    ),
+                    keyboardType: TextInputType.numberWithOptions(decimal: true),
+                    onChanged: (value) {
+                      final price = double.tryParse(value) ?? 0.0;
+                      // FIX: Preservar selectedUom al cambiar precio
+                      final currentUom = _documentLines[index].selectedUom;
+                      setState(() {
+                        _documentLines[index] = _documentLines[index].copyWith(
+                          priceAfterVAT: price,
+                          selectedUom: currentUom, // Preservar explícitamente
+                        );
+                      });
+                    },
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Requerido';
+                      }
+                      if (double.tryParse(value) == null || double.parse(value) < 0) {
+                        return 'Precio inválido';
+                      }
+                      return null;
+                    },
+                  ),
+                ),
+              ],
             ),
             
-            const SizedBox(height: 8),
+            const SizedBox(height: 16),
+            
+            // Line Total
             Container(
-              padding: const EdgeInsets.all(12),
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.blue[50],
-                borderRadius: BorderRadius.circular(8),
+                gradient: LinearGradient(
+                  colors: [Colors.blue[50]!, Colors.blue[100]!],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: Colors.blue[200]!),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
-                    'Total Línea:',
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Total de esta línea:',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.blue[700],
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      Text(
+                        '${line.quantity} x Bs. ${NumberFormat('#,##0.00').format(line.priceAfterVAT)}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.blue[600],
+                        ),
+                      ),
+                    ],
                   ),
                   Text(
                     'Bs. ${NumberFormat('#,##0.00').format(line.quantity * line.priceAfterVAT)}',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       color: Colors.blue[700],
-                      fontSize: 16,
+                      fontSize: 18,
                     ),
                   ),
                 ],
               ),
             ),
-            
-            // Mostrar información de la UoM seleccionada
-            if (line.selectedUom != null) ...[
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.green[50],
-                  borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: Colors.green[200]!),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.info, size: 16, color: Colors.green[600]),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'UoM: ${line.selectedUom!.displayText} (${line.selectedUom!.baseQty}:${line.selectedUom!.altQty})',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.green[700],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
           ],
         ),
       ),
     );
   }
 }
-

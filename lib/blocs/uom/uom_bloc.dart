@@ -71,7 +71,11 @@ class UomBloc extends Bloc<UomEvent, UomState> {
     if (currentState is UomLoaded && currentState.itemCode == event.unitOfMeasure.itemCode) {
       _selectedUoms[event.unitOfMeasure.itemCode] = event.unitOfMeasure;
       
-      emit(currentState.copyWith(selectedUom: event.unitOfMeasure));
+      // FIX: Usar el flag para actualizar solo selectedUom
+      emit(currentState.copyWith(
+        selectedUom: event.unitOfMeasure,
+        updateSelectedUom: true, // Indicar que sí queremos actualizar
+      ));
     }
   }
 

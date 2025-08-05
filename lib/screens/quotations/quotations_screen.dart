@@ -7,7 +7,7 @@ import 'package:intl/intl.dart';
 import '../../blocs/quotations/quotations_bloc.dart';
 import '../../blocs/quotations/quotations_event.dart';
 import '../../blocs/quotations/quotations_state.dart';
-import '../../models/sales_quotation.dart';
+import '../../models/quotation/sales_quotation.dart';
 
 class QuotationsScreen extends StatefulWidget {
   const QuotationsScreen({Key? key}) : super(key: key);

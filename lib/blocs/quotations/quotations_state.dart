@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import '../../models/sales_quotation.dart';
+import '../../models/quotation/sales_quotation.dart';
 
 abstract class QuotationsState extends Equatable {
   const QuotationsState();
@@ -47,4 +47,38 @@ class QuotationsError extends QuotationsState {
 
   @override
   List<Object> get props => [message];
+}
+
+// NUEVOS ESTADOS PARA PDF
+class QuotationPdfLoading extends QuotationsState {
+  final String operation; // 'preview', 'share', 'print'
+  final String message;
+
+  const QuotationPdfLoading(this.operation, this.message);
+
+  @override
+  List<Object> get props => [operation, message];
+}
+
+class QuotationPdfPreviewSuccess extends QuotationsState {}
+
+class QuotationPdfShareSuccess extends QuotationsState {
+  final String message;
+
+  const QuotationPdfShareSuccess(this.message);
+
+  @override
+  List<Object> get props => [message];
+}
+
+class QuotationPdfPrintSuccess extends QuotationsState {}
+
+class QuotationPdfError extends QuotationsState {
+  final String operation;
+  final String message;
+
+  const QuotationPdfError(this.operation, this.message);
+
+  @override
+  List<Object> get props => [operation, message];
 }

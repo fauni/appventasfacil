@@ -1,6 +1,8 @@
 import 'package:appventas/blocs/item/item_bloc.dart';
 import 'package:appventas/blocs/quotations/quotations_bloc.dart';
 import 'package:appventas/blocs/sales/sales_bloc.dart';
+import 'package:appventas/blocs/terms_conditions/terms_conditions_bloc.dart';
+import 'package:appventas/services/current_user_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -14,7 +16,13 @@ import 'screens/home_screen.dart';
 
 import 'package:appventas/services/http_client.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Inicializar CurrentUserService
+  final currentUserService = CurrentUserService();
+  await currentUserService.loadCurrentUser();
+  
   runApp(const MyApp());
 }
 
@@ -37,6 +45,7 @@ class MyApp extends StatelessWidget {
         BlocProvider<CustomerBloc>(create: (context) => CustomerBloc()), // Nuevo BlocProvider
         BlocProvider<ItemBloc>(create: (context) => ItemBloc()),
         BlocProvider<UomBloc>(create: (context) => UomBloc()), // Nuevo BlocProvider
+        BlocProvider<TermsConditionsBloc>(create: (context) => TermsConditionsBloc()),
       ],
       child: MaterialApp(
         title: 'SAP Sales App',
