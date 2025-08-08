@@ -1,13 +1,12 @@
 // lib/screens/home_screen.dart
 import 'package:appventas/screens/quotations/quotations_screen.dart';
 import 'package:appventas/screens/sales/sales_screen.dart';
+import 'package:appventas/screens/sales_order/sales_orders_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../blocs/auth/auth_bloc.dart';
 import '../blocs/auth/auth_event.dart';
 import '../blocs/auth/auth_state.dart';
-import '../blocs/quotations/quotations_bloc.dart';
-import '../blocs/sales/sales_bloc.dart';
 import 'login_screen.dart';
 import 'dashboard_screen.dart';
 
@@ -25,6 +24,7 @@ class _HomeScreenState extends State<HomeScreen> {
     const DashboardScreen(),
     const QuotationsScreen(),
     const SalesScreen(),
+    const SalesOrdersScreen()
   ];
 
   void _onItemTapped(int index) {
@@ -143,6 +143,10 @@ class _HomeScreenState extends State<HomeScreen> {
               icon: Icon(Icons.shopping_cart),
               label: 'Ventas',
             ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.receipt_long),
+              label: 'Órdenes',
+            )
           ],
         ),
       ),
