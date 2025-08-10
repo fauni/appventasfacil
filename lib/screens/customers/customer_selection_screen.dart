@@ -1,4 +1,5 @@
 // lib/screens/customer_selection_screen.dart
+import 'package:appventas/core/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:appventas/models/customer/customer.dart';
@@ -97,6 +98,7 @@ class _CustomerSelectionScreenState extends State<CustomerSelectionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[50],
       appBar: AppBar(
         title: const Text('Seleccionar Cliente'),
         backgroundColor: Colors.blue[600],
@@ -333,6 +335,7 @@ class _CustomerSelectionScreenState extends State<CustomerSelectionScreen> {
                     final isSelected = _selectedCustomer?.cardCode == customer.cardCode;
 
                     return Card(
+                      color: Colors.white,
                       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       elevation: isSelected ? 8 : 2,
                       child: Container(

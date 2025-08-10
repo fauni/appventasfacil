@@ -97,6 +97,7 @@ class _ItemSelectionScreenState extends State<ItemSelectionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[50],
       appBar: AppBar(
         title: const Text('Seleccionar Item'),
         backgroundColor: Colors.blue[600],
@@ -333,6 +334,7 @@ class _ItemSelectionScreenState extends State<ItemSelectionScreen> {
                     final isSelected = _selectedItem?.itemCode == item.itemCode;
 
                     return Card(
+                      color: Colors.white,
                       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       elevation: isSelected ? 8 : 2,
                       child: Container(

@@ -51,6 +51,7 @@ class _UomSelectionScreenState extends State<UomSelectionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[50],
       appBar: AppBar(
         title: const Text('Seleccionar Unidad de Medida'),
         backgroundColor: Colors.blue[600],
@@ -271,6 +272,7 @@ class _UomSelectionScreenState extends State<UomSelectionScreen> {
                       final isSelected = _selectedUom?.uomEntry == uom.uomEntry;
 
                       return Card(
+                        color: Colors.white,
                         margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         elevation: isSelected ? 8 : 2,
                         child: Container(

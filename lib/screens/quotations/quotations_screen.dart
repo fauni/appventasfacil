@@ -1,4 +1,5 @@
 // lib/screens/quotations_screen.dart
+import 'package:appventas/core/app_colors.dart';
 import 'package:appventas/screens/quotations/create_quotation_screen.dart';
 import 'package:appventas/screens/quotations/quotation_detail_screen.dart';
 import 'package:flutter/material.dart';
@@ -26,13 +27,15 @@ class _QuotationsScreenState extends State<QuotationsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: AppColors.background,
       body: Column(
         children: [
           // Header
           Container(
             padding: const EdgeInsets.all(16),
-            color: Colors.blue[600],
+            decoration: BoxDecoration(
+              gradient: AppColors.headerGradient,
+            ),
             child: Row(
               children: [
                 Expanded(
@@ -44,14 +47,14 @@ class _QuotationsScreenState extends State<QuotationsScreen> {
                         style: TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                          color: AppColors.onPrimary,
                         ),
                       ),
                       Text(
                         'Gestiona tus cotizaciones de SAP',
                         style: TextStyle(
                           fontSize: 16,
-                          color: Colors.white70,
+                          color: AppColors.onPrimary.withOpacity(0.7),
                         ),
                       ),
                     ],
@@ -66,8 +69,8 @@ class _QuotationsScreenState extends State<QuotationsScreen> {
                       ),
                     );
                   },
-                  backgroundColor: Colors.white,
-                  foregroundColor: Colors.blue[600],
+                  backgroundColor: AppColors.surface,
+                  foregroundColor: AppColors.quotations,
                   mini: true,
                   child: const Icon(Icons.add),
                 ),
@@ -83,14 +86,14 @@ class _QuotationsScreenState extends State<QuotationsScreen> {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(state.message),
-                      backgroundColor: Colors.red,
+                      backgroundColor: AppColors.error,
                     ),
                   );
                 } else if (state is QuotationConvertedToSale) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Cotización convertida a venta exitosamente'),
-                      backgroundColor: Colors.green,
+                    SnackBar(
+                      content: const Text('Cotización convertida a venta exitosamente'),
+                      backgroundColor: AppColors.success,
                     ),
                   );
                   // Reload quotations
@@ -99,8 +102,10 @@ class _QuotationsScreenState extends State<QuotationsScreen> {
               },
               builder: (context, state) {
                 if (state is QuotationsLoading) {
-                  return const Center(
-                    child: CircularProgressIndicator(),
+                  return Center(
+                    child: CircularProgressIndicator(
+                      color: AppColors.primary,
+                    ),
                   );
                 }
 
@@ -110,6 +115,7 @@ class _QuotationsScreenState extends State<QuotationsScreen> {
                   }
 
                   return RefreshIndicator(
+                    color: AppColors.primary,
                     onRefresh: () async {
                       context.read<QuotationsBloc>().add(QuotationsLoadRequested());
                     },
@@ -140,10 +146,11 @@ class _QuotationsScreenState extends State<QuotationsScreen> {
   Widget _buildQuotationCard(SalesQuotation quotation) {
     final formatter = NumberFormat.currency(locale: 'es_BO', symbol: 'Bs. ');
     final dateFormatter = DateFormat('dd/MM/yyyy');
-
     return Card(
+      color: AppColors.surface,
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 2,
+      shadowColor: AppColors.shadow,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
       ),
@@ -172,9 +179,10 @@ class _QuotationsScreenState extends State<QuotationsScreen> {
                       children: [
                         Text(
                           'Cotización #${quotation.docNum ?? 'N/A'}',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
+                            color: AppColors.onSurface,
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -182,7 +190,7 @@ class _QuotationsScreenState extends State<QuotationsScreen> {
                           quotation.cardName,
                           style: TextStyle(
                             fontSize: 14,
-                            color: Colors.grey[600],
+                            color: AppColors.textSecondary,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -198,14 +206,14 @@ class _QuotationsScreenState extends State<QuotationsScreen> {
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
-                          color: Colors.green[600],
+                          color: AppColors.quotations,
                         ),
                       ),
                       Text(
                         dateFormatter.format(quotation.docDate),
                         style: TextStyle(
                           fontSize: 12,
-                          color: Colors.grey[500],
+                          color: AppColors.textSecondary.withOpacity(0.8),
                         ),
                       ),
                     ],
@@ -219,7 +227,7 @@ class _QuotationsScreenState extends State<QuotationsScreen> {
                   quotation.comments!,
                   style: TextStyle(
                     fontSize: 12,
-                    color: Colors.grey[600],
+                    color: AppColors.textSecondary,
                   ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
@@ -246,8 +254,8 @@ class _QuotationsScreenState extends State<QuotationsScreen> {
                       icon: const Icon(Icons.visibility, size: 16),
                       label: const Text('Ver Detalle'),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.blue[600],
-                        side: BorderSide(color: Colors.blue[600]!),
+                        foregroundColor: AppColors.quotations,
+                        side: BorderSide(color: AppColors.quotations),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
@@ -263,8 +271,10 @@ class _QuotationsScreenState extends State<QuotationsScreen> {
                       icon: const Icon(Icons.shopping_cart, size: 16),
                       label: const Text('Crear Venta'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green[600],
-                        foregroundColor: Colors.white,
+                        backgroundColor: AppColors.sales,
+                        foregroundColor: AppColors.onSuccess,
+                        disabledBackgroundColor: AppColors.disabled,
+                        disabledForegroundColor: AppColors.onDisabled,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
@@ -288,7 +298,7 @@ class _QuotationsScreenState extends State<QuotationsScreen> {
           Icon(
             Icons.description_outlined,
             size: 64,
-            color: Colors.grey[400],
+            color: AppColors.disabled,
           ),
           const SizedBox(height: 16),
           Text(
@@ -296,7 +306,7 @@ class _QuotationsScreenState extends State<QuotationsScreen> {
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: Colors.grey[600],
+              color: AppColors.textSecondary,
             ),
           ),
           const SizedBox(height: 8),
@@ -304,7 +314,7 @@ class _QuotationsScreenState extends State<QuotationsScreen> {
             'Crea tu primera cotización',
             style: TextStyle(
               fontSize: 14,
-              color: Colors.grey[500],
+              color: AppColors.textSecondary.withOpacity(0.8),
             ),
           ),
           const SizedBox(height: 24),
@@ -320,8 +330,8 @@ class _QuotationsScreenState extends State<QuotationsScreen> {
             icon: const Icon(Icons.add),
             label: const Text('Nueva Cotización'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blue[600],
-              foregroundColor: Colors.white,
+              backgroundColor: AppColors.quotations,
+              foregroundColor: AppColors.onPrimary,
             ),
           ),
         ],
@@ -337,7 +347,7 @@ class _QuotationsScreenState extends State<QuotationsScreen> {
           Icon(
             Icons.error_outline,
             size: 64,
-            color: Colors.red[400],
+            color: AppColors.error.withOpacity(0.7),
           ),
           const SizedBox(height: 16),
           Text(
@@ -345,7 +355,7 @@ class _QuotationsScreenState extends State<QuotationsScreen> {
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: Colors.grey[600],
+              color: AppColors.textSecondary,
             ),
           ),
           const SizedBox(height: 8),
@@ -353,7 +363,7 @@ class _QuotationsScreenState extends State<QuotationsScreen> {
             message,
             style: TextStyle(
               fontSize: 14,
-              color: Colors.grey[500],
+              color: AppColors.textSecondary.withOpacity(0.8),
             ),
             textAlign: TextAlign.center,
           ),
@@ -365,8 +375,8 @@ class _QuotationsScreenState extends State<QuotationsScreen> {
             icon: const Icon(Icons.refresh),
             label: const Text('Reintentar'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blue[600],
-              foregroundColor: Colors.white,
+              backgroundColor: AppColors.quotations,
+              foregroundColor: AppColors.onPrimary,
             ),
           ),
         ],
@@ -379,14 +389,22 @@ class _QuotationsScreenState extends State<QuotationsScreen> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Convertir a Venta'),
-          content: const Text(
+          backgroundColor: AppColors.surface,
+          title: Text(
+            'Convertir a Venta',
+            style: TextStyle(color: AppColors.onSurface),
+          ),
+          content: Text(
             '¿Está seguro que desea convertir esta cotización en una orden de venta?',
+            style: TextStyle(color: AppColors.textSecondary),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancelar'),
+              child: Text(
+                'Cancelar',
+                style: TextStyle(color: AppColors.textSecondary),
+              ),
             ),
             ElevatedButton(
               onPressed: () {
@@ -396,8 +414,8 @@ class _QuotationsScreenState extends State<QuotationsScreen> {
                     );
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green[600],
-                foregroundColor: Colors.white,
+                backgroundColor: AppColors.sales,
+                foregroundColor: AppColors.onSuccess,
               ),
               child: const Text('Convertir'),
             ),

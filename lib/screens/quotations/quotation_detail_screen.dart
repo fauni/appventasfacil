@@ -1,4 +1,5 @@
 // lib/screens/quotations/quotation_detail_screen.dart
+import 'package:appventas/core/app_colors.dart';
 import 'package:appventas/blocs/quotations/quotations_bloc.dart';
 import 'package:appventas/blocs/quotations/quotations_event.dart';
 import 'package:appventas/blocs/quotations/quotations_state.dart';
@@ -30,17 +31,19 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
     final dateFormatter = DateFormat('dd/MM/yyyy');
 
     return Scaffold(
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Text('Cotización #${widget.quotation.docNum ?? 'N/A'}'),
-        backgroundColor: Colors.blue[600],
-        foregroundColor: Colors.white,
+        backgroundColor: AppColors.quotations,
+        foregroundColor: AppColors.onPrimary,
         elevation: 0,
+        iconTheme: IconThemeData(color: AppColors.onPrimary),
         actions: [
-          IconButton(
-            onPressed: () => _shareQuotation(context),
-            icon: const Icon(Icons.share),
-            tooltip: 'Compartir información',
-          ),
+          // IconButton(
+          //   onPressed: () => _shareQuotation(context),
+          //   icon: const Icon(Icons.share),
+          //   tooltip: 'Compartir información',
+          // ),
           IconButton(
             onPressed: widget.quotation.docEntry != null 
                 ? () => _showPdfOptions(context)
@@ -50,67 +53,69 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
           ),
           PopupMenuButton<String>(
             onSelected: (value) => _handleMenuAction(context, value),
+            icon: Icon(Icons.more_vert, color: AppColors.onPrimary),
+            color: AppColors.surface,
             itemBuilder: (BuildContext context) => [
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'copy_number',
                 child: Row(
                   children: [
-                    Icon(Icons.copy, size: 18),
-                    SizedBox(width: 8),
-                    Text('Copiar Número'),
+                    Icon(Icons.copy, size: 18, color: AppColors.textSecondary),
+                    const SizedBox(width: 8),
+                    Text('Copiar Número', style: TextStyle(color: AppColors.onSurface)),
                   ],
                 ),
               ),
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'copy_code',
                 child: Row(
                   children: [
-                    Icon(Icons.copy, size: 18),
-                    SizedBox(width: 8),
-                    Text('Copiar Código Cliente'),
+                    Icon(Icons.copy, size: 18, color: AppColors.textSecondary),
+                    const SizedBox(width: 8),
+                    Text('Copiar Código Cliente', style: TextStyle(color: AppColors.onSurface)),
                   ],
                 ),
               ),
               if (widget.quotation.docEntry != null) ...[
                 const PopupMenuDivider(),
-                const PopupMenuItem(
+                PopupMenuItem(
                   value: 'pdf_preview',
                   child: Row(
                     children: [
-                      Icon(Icons.preview, size: 18),
-                      SizedBox(width: 8),
-                      Text('Vista Previa PDF'),
+                      Icon(Icons.preview, size: 18, color: AppColors.textSecondary),
+                      const SizedBox(width: 8),
+                      Text('Vista Previa PDF', style: TextStyle(color: AppColors.onSurface)),
                     ],
                   ),
                 ),
-                const PopupMenuItem(
-                  value: 'pdf_share',
-                  child: Row(
-                    children: [
-                      Icon(Icons.share, size: 18),
-                      SizedBox(width: 8),
-                      Text('Compartir PDF'),
-                    ],
-                  ),
-                ),
-                const PopupMenuItem(
+                // PopupMenuItem(
+                //   value: 'pdf_share',
+                //   child: Row(
+                //     children: [
+                //       Icon(Icons.share, size: 18, color: AppColors.textSecondary),
+                //       const SizedBox(width: 8),
+                //       Text('Compartir PDF', style: TextStyle(color: AppColors.onSurface)),
+                //     ],
+                //   ),
+                // ),
+                PopupMenuItem(
                   value: 'pdf_print',
                   child: Row(
                     children: [
-                      Icon(Icons.print, size: 18),
-                      SizedBox(width: 8),
-                      Text('Imprimir PDF'),
+                      Icon(Icons.print, size: 18, color: AppColors.textSecondary),
+                      const SizedBox(width: 8),
+                      Text('Imprimir PDF', style: TextStyle(color: AppColors.onSurface)),
                     ],
                   ),
                 ),
                 const PopupMenuDivider(),
-                const PopupMenuItem(
+                PopupMenuItem(
                   value: 'convert_sale',
                   child: Row(
                     children: [
-                      Icon(Icons.shopping_cart, size: 18),
-                      SizedBox(width: 8),
-                      Text('Convertir a Venta'),
+                      Icon(Icons.shopping_cart, size: 18, color: AppColors.sales),
+                      const SizedBox(width: 8),
+                      Text('Convertir a Venta', style: TextStyle(color: AppColors.sales)),
                     ],
                   ),
                 ),
@@ -164,10 +169,10 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
           child: Column(
             children: [
               _buildHeaderSection(formatter),
-              _buildCustomerSection(),
               _buildDocumentSection(dateFormatter),
+              _buildCustomerSection(),
               _buildTermsSection(),
-              _buildAdditionalInfoSection(),
+              // _buildAdditionalInfoSection(),
               _buildLinesSection(formatter),
               if (widget.quotation.docEntry != null)
                 _buildConvertButton(context),
@@ -179,11 +184,11 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
       floatingActionButton: widget.quotation.docEntry != null 
           ? FloatingActionButton.extended(
               onPressed: () => _showPdfOptions(context),
-              backgroundColor: Colors.red[600],
-              foregroundColor: Colors.white,
+              backgroundColor: AppColors.reports,
+              foregroundColor: AppColors.onPrimary,
               icon: const Icon(Icons.picture_as_pdf),
-              label: const Text('PDF'),
-              tooltip: 'Generar PDF desde servidor',
+              label: const Text('Imprimir'),
+              tooltip: 'Generar PDF para impresión',
             )
           : null,
     );
@@ -193,11 +198,7 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Colors.blue[600]!, Colors.blue[800]!],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        gradient: AppColors.headerGradient,
       ),
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -207,68 +208,30 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Cotización #${widget.quotation.docNum ?? 'N/A'}',
-                      style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Doc Entry: ${widget.quotation.docEntry ?? 'N/A'}',
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: Colors.white70,
-                      ),
-                    ),
-                  ],
-                ),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Colors.white.withOpacity(0.3)),
+                    color: AppColors.onPrimary.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: AppColors.onPrimary.withOpacity(0.3)),
                   ),
-                  child: Text(
-                    formatter.format(widget.quotation.docTotal),
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.money_sharp, color: AppColors.onPrimary, size: 20),
+                      Text('Total de la Cotización: ', style: TextStyle(color: AppColors.onPrimary)),
+                      SizedBox(width: 10,),
+                      Text(
+                        formatter.format(widget.quotation.docTotal),
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.onPrimary,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
-            ),
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.person, color: Colors.white70, size: 20),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      widget.quotation.cardName,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        color: Colors.white,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
             ),
           ],
         ),
@@ -280,7 +243,7 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
     return _buildSection(
       title: 'Información del Cliente',
       icon: Icons.person_outline,
-      iconColor: Colors.blue[600]!,
+      iconColor: AppColors.customers,
       children: [
         _buildInfoTile(
           icon: Icons.badge,
@@ -311,7 +274,7 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
             icon: Icons.person_pin,
             label: 'Vendedor',
             value: widget.quotation.slpName != null && widget.quotation.slpName!.isNotEmpty
-                ? '${widget.quotation.slpName} (Código: ${widget.quotation.slpCode})'
+                ? '${widget.quotation.slpName}'
                 : 'Código: ${widget.quotation.slpCode}',
           ),
       ],
@@ -322,7 +285,7 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
     return _buildSection(
       title: 'Información del Documento',
       icon: Icons.description_outlined,
-      iconColor: Colors.green[600]!,
+      iconColor: AppColors.success,
       children: [
         _buildInfoTile(
           icon: Icons.calendar_today,
@@ -355,7 +318,7 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
     return _buildSection(
       title: 'Términos y Condiciones',
       icon: Icons.assignment_outlined,
-      iconColor: Colors.orange[600]!,
+      iconColor: AppColors.warning,
       children: [
         if (widget.quotation.uVfTiempoEntrega != null && widget.quotation.uVfTiempoEntrega!.isNotEmpty)
           _buildInfoTile(
@@ -392,7 +355,7 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
     return _buildSection(
       title: 'Información Adicional',
       icon: Icons.info_outline,
-      iconColor: Colors.purple[600]!,
+      iconColor: AppColors.info,
       children: [
         _buildInfoTile(
           icon: Icons.phone_android,
@@ -414,11 +377,11 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
     return Container(
       margin: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: AppColors.shadow,
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -434,12 +397,12 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.indigo[100],
+                    color: AppColors.items.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
                     Icons.inventory_2_outlined,
-                    color: Colors.indigo[600],
+                    color: AppColors.items,
                     size: 20,
                   ),
                 ),
@@ -449,13 +412,13 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: Colors.grey[800],
+                    color: AppColors.onSurface,
                   ),
                 ),
               ],
             ),
           ),
-          const Divider(height: 1),
+          Divider(height: 1, color: AppColors.border),
           if (widget.quotation.lines.isEmpty)
             Padding(
               padding: const EdgeInsets.all(32),
@@ -464,14 +427,14 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
                   Icon(
                     Icons.inventory_2_outlined,
                     size: 48,
-                    color: Colors.grey[400],
+                    color: AppColors.disabled,
                   ),
                   const SizedBox(height: 16),
                   Text(
                     'No hay productos en esta cotización',
                     style: TextStyle(
                       fontSize: 16,
-                      color: Colors.grey[600],
+                      color: AppColors.textSecondary,
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -504,11 +467,11 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: AppColors.shadow,
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -539,13 +502,13 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: Colors.grey[800],
+                    color: AppColors.onSurface,
                   ),
                 ),
               ],
             ),
           ),
-          const Divider(height: 1),
+          Divider(height: 1, color: AppColors.border),
           Padding(
             padding: const EdgeInsets.all(16),
             child: Column(children: children),
@@ -570,7 +533,7 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
           Icon(
             icon,
             size: 18,
-            color: Colors.grey[600],
+            color: AppColors.textSecondary,
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -582,7 +545,7 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
-                    color: Colors.grey[600],
+                    color: AppColors.textSecondary,
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -591,9 +554,10 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
                     Expanded(
                       child: Text(
                         value,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.normal,
+                          color: AppColors.onSurface,
                         ),
                         maxLines: maxLines,
                         overflow: TextOverflow.ellipsis,
@@ -607,7 +571,7 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
                           child: Icon(
                             Icons.copy,
                             size: 16,
-                            color: Colors.grey[500],
+                            color: AppColors.textSecondary.withOpacity(0.8),
                           ),
                         ),
                       ),
@@ -625,9 +589,9 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.grey[50],
+        color: AppColors.surfaceVariant,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!),
+        border: Border.all(color: AppColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -638,14 +602,14 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
                 width: 24,
                 height: 24,
                 decoration: BoxDecoration(
-                  color: Colors.blue[600],
+                  color: AppColors.quotations,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Center(
                   child: Text(
                     index.toString(),
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: AppColors.onPrimary,
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
                     ),
@@ -659,16 +623,17 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
                   children: [
                     Text(
                       line.itemCode,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
+                        color: AppColors.onSurface,
                       ),
                     ),
                     if (line.description.isNotEmpty)
                       Text(
                         line.description,
                         style: TextStyle(
-                          color: Colors.grey[600],
+                          color: AppColors.textSecondary,
                           fontSize: 14,
                         ),
                         maxLines: 2,
@@ -682,7 +647,7 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
-                  color: Colors.green[600],
+                  color: AppColors.success,
                 ),
               ),
             ],
@@ -691,16 +656,16 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppColors.surface,
               borderRadius: BorderRadius.circular(8),
             ),
             child: Row(
               children: [
                 _buildLineDetail('Cantidad', '${line.quantity}', Icons.numbers),
                 const SizedBox(width: 16),
-                _buildLineDetail('UOM', line.uomCode, Icons.straighten),
+                _buildLineDetail('Unidad de Medida', line.uomCode, Icons.straighten),
                 const SizedBox(width: 16),
-                _buildLineDetail('Precio', formatter.format(line.priceAfVat), Icons.attach_money),
+                _buildLineDetail('Precio', formatter.format(line.priceAfVat), Icons.money),
               ],
             ),
           ),
@@ -716,23 +681,24 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
           Icon(
             icon,
             size: 16,
-            color: Colors.grey[600],
+            color: AppColors.textSecondary,
           ),
           const SizedBox(height: 4),
           Text(
             label,
             style: TextStyle(
               fontSize: 10,
-              color: Colors.grey[600],
+              color: AppColors.textSecondary,
               fontWeight: FontWeight.w500,
             ),
           ),
           const SizedBox(height: 2),
           Text(
             value,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.bold,
+              color: AppColors.onSurface,
             ),
             textAlign: TextAlign.center,
             overflow: TextOverflow.ellipsis,
@@ -753,16 +719,21 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
           return ElevatedButton.icon(
             onPressed: isLoading ? null : () => _convertToSale(context, widget.quotation.docEntry!),
             icon: isLoading 
-                ? const SizedBox(
+                ? SizedBox(
                     width: 20,
                     height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white)),
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2, 
+                      valueColor: AlwaysStoppedAnimation<Color>(AppColors.onSuccess)
+                    ),
                   )
                 : const Icon(Icons.shopping_cart),
             label: Text(isLoading ? 'Convirtiendo...' : 'Convertir a Orden de Venta'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green[600],
-              foregroundColor: Colors.white,
+              backgroundColor: AppColors.sales,
+              foregroundColor: AppColors.onSuccess,
+              disabledBackgroundColor: AppColors.disabled,
+              disabledForegroundColor: AppColors.onDisabled,
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -778,7 +749,7 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
   // Helper method para mostrar nombre + código o solo código
   String _getDisplayValue(String? name, String? code) {
     if (name != null && name.isNotEmpty) {
-      return '$name (Código: $code)';
+      return name;
     }
     return 'Código: $code';
   }
@@ -869,12 +840,13 @@ Generado desde SAP Sales App
 
   void _showPdfOptions(BuildContext context) {
     if (widget.quotation.docEntry == null) {
-      _showErrorMessage(context, 'No se puede generar PDF: DocEntry no disponible');
+      _showErrorMessage(context, 'No se puede generar Reporte: DocEntry no disponible');
       return;
     }
 
     showModalBottomSheet(
       context: context,
+      backgroundColor: AppColors.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -888,31 +860,31 @@ Generado desde SAP Sales App
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.grey[300],
+                  color: AppColors.border,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
               const SizedBox(height: 20),
               Row(
                 children: [
-                  Icon(Icons.cloud_download, color: Colors.blue[600]),
+                  Icon(Icons.cloud_download, color: AppColors.reports),
                   const SizedBox(width: 8),
                   Text(
-                    'PDF desde Servidor',
+                    'Reporte de Cotización',
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      color: Colors.grey[800],
+                      color: AppColors.onSurface,
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 8),
               Text(
-                'DocEntry: ${widget.quotation.docEntry}',
+                'Numero de Documento: ${widget.quotation.docNum ?? 'N/A'}',
                 style: TextStyle(
                   fontSize: 14,
-                  color: Colors.grey[600],
+                  color: AppColors.textSecondary,
                 ),
               ),
               const SizedBox(height: 20),
@@ -920,30 +892,30 @@ Generado desde SAP Sales App
                 context: context,
                 icon: Icons.preview,
                 title: 'Vista Previa',
-                subtitle: 'Ver el PDF generado desde el servidor',
-                color: Colors.blue,
+                subtitle: 'Ver el reporte generado',
+                color: AppColors.info,
                 onTap: () {
                   Navigator.pop(context);
                   _previewPdf(context);
                 },
               ),
-              _buildPdfOption(
-                context: context,
-                icon: Icons.share,
-                title: 'Compartir PDF',
-                subtitle: 'Descargar y compartir desde servidor',
-                color: Colors.green,
-                onTap: () {
-                  Navigator.pop(context);
-                  _sharePdf(context);
-                },
-              ),
+              // _buildPdfOption(
+              //   context: context,
+              //   icon: Icons.share,
+              //   title: 'Compartir PDF',
+              //   subtitle: 'Descargar y compartir desde servidor',
+              //   color: AppColors.success,
+              //   onTap: () {
+              //     Navigator.pop(context);
+              //     _sharePdf(context);
+              //   },
+              // ),
               _buildPdfOption(
                 context: context,
                 icon: Icons.print,
                 title: 'Imprimir',
-                subtitle: 'Descargar e imprimir desde servidor',
-                color: Colors.orange,
+                subtitle: 'Descargar e imprimir el reporte',
+                color: AppColors.warning,
                 onTap: () {
                   Navigator.pop(context);
                   _printPdf(context);
@@ -973,7 +945,7 @@ Generado desde SAP Sales App
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey[200]!),
+            border: Border.all(color: AppColors.border),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Row(
@@ -997,9 +969,10 @@ Generado desde SAP Sales App
                   children: [
                     Text(
                       title,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
+                        color: AppColors.onSurface,
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -1007,7 +980,7 @@ Generado desde SAP Sales App
                       subtitle,
                       style: TextStyle(
                         fontSize: 14,
-                        color: Colors.grey[600],
+                        color: AppColors.textSecondary,
                       ),
                     ),
                   ],
@@ -1015,7 +988,7 @@ Generado desde SAP Sales App
               ),
               Icon(
                 Icons.arrow_forward_ios,
-                color: Colors.grey[400],
+                color: AppColors.disabled,
                 size: 16,
               ),
             ],
@@ -1030,39 +1003,44 @@ Generado desde SAP Sales App
       context: context,
       builder: (BuildContext dialogContext) {
         return AlertDialog(
+          backgroundColor: AppColors.surface,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
           title: Row(
             children: [
-              Icon(Icons.shopping_cart, color: Colors.green[600]),
+              Icon(Icons.shopping_cart, color: AppColors.sales),
               const SizedBox(width: 8),
-              const Text('Convertir a Venta'),
+              Text(
+                'Convertir a Venta',
+                style: TextStyle(color: AppColors.onSurface),
+              ),
             ],
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 '¿Está seguro que desea convertir esta cotización en una orden de venta?',
+                style: TextStyle(color: AppColors.onSurface),
               ),
               const SizedBox(height: 16),
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.blue[50],
+                  color: AppColors.info.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.info, color: Colors.blue[600], size: 20),
+                    Icon(Icons.info, color: AppColors.info, size: 20),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         'Esta acción no se puede deshacer',
                         style: TextStyle(
-                          color: Colors.blue[700],
+                          color: AppColors.info,
                           fontSize: 12,
                         ),
                       ),
@@ -1077,7 +1055,7 @@ Generado desde SAP Sales App
               onPressed: () => Navigator.of(dialogContext).pop(),
               child: Text(
                 'Cancelar',
-                style: TextStyle(color: Colors.grey[600]),
+                style: TextStyle(color: AppColors.textSecondary),
               ),
             ),
             ElevatedButton.icon(
@@ -1090,8 +1068,8 @@ Generado desde SAP Sales App
               icon: const Icon(Icons.check),
               label: const Text('Convertir'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green[600],
-                foregroundColor: Colors.white,
+                backgroundColor: AppColors.sales,
+                foregroundColor: AppColors.onSuccess,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -1112,6 +1090,7 @@ Generado desde SAP Sales App
         barrierDismissible: false,
         builder: (BuildContext dialogContext) {
           return Dialog(
+            backgroundColor: AppColors.surface,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
@@ -1121,12 +1100,15 @@ Generado desde SAP Sales App
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.blue[600]!),
+                    valueColor: AlwaysStoppedAnimation<Color>(AppColors.quotations),
                   ),
                   const SizedBox(height: 16),
                   Text(
                     message,
-                    style: const TextStyle(fontSize: 16),
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: AppColors.onSurface,
+                    ),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 8),
@@ -1134,7 +1116,7 @@ Generado desde SAP Sales App
                     'Por favor espere...',
                     style: TextStyle(
                       fontSize: 14,
-                      color: Colors.grey[600],
+                      color: AppColors.textSecondary,
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -1161,12 +1143,12 @@ Generado desde SAP Sales App
         SnackBar(
           content: Row(
             children: [
-              const Icon(Icons.check_circle, color: Colors.white),
+              Icon(Icons.check_circle, color: AppColors.onSuccess),
               const SizedBox(width: 8),
               Expanded(child: Text(message)),
             ],
           ),
-          backgroundColor: Colors.green,
+          backgroundColor: AppColors.success,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
@@ -1183,12 +1165,12 @@ Generado desde SAP Sales App
         SnackBar(
           content: Row(
             children: [
-              const Icon(Icons.error, color: Colors.white),
+              Icon(Icons.error, color: AppColors.onError),
               const SizedBox(width: 8),
               Expanded(child: Text(message)),
             ],
           ),
-          backgroundColor: Colors.red,
+          backgroundColor: AppColors.error,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),

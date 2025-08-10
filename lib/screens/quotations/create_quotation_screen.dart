@@ -1,3 +1,4 @@
+import 'package:appventas/core/app_colors.dart';
 import 'package:appventas/blocs/customer/customer_bloc.dart';
 import 'package:appventas/blocs/quotations/quotations_bloc.dart';
 import 'package:appventas/blocs/quotations/quotations_event.dart';
@@ -141,13 +142,13 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
             children: [
               Icon(
                 isSuccess ? Icons.check_circle : Icons.warning,
-                color: Colors.white,
+                color: AppColors.onSuccess,
               ),
               SizedBox(width: 8),
               Expanded(child: Text(message)),
             ],
           ),
-          backgroundColor: isSuccess ? Colors.green : Colors.orange,
+          backgroundColor: isSuccess ? AppColors.success : AppColors.warning,
           duration: Duration(seconds: 3),
         ),
       );
@@ -307,7 +308,7 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: Colors.red,
+        backgroundColor: AppColors.error,
       ),
     );
   }
@@ -319,18 +320,19 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[50],
       appBar: AppBar(
         title: const Text('Nueva Cotización'),
-        backgroundColor: Colors.blue[600],
-        foregroundColor: Colors.white,
+        backgroundColor: AppColors.quotations,
+        foregroundColor: AppColors.onPrimary,
         actions: [
           if (!_isLoading)
             TextButton(
               onPressed: _createQuotation,
-              child: const Text(
+              child: Text(
                 'CREAR',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: AppColors.onPrimary,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -353,9 +355,9 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
         
               if (state is QuotationCreated) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Cotización creada exitosamente'),
-                    backgroundColor: Colors.green,
+                  SnackBar(
+                    content: const Text('Cotización creada exitosamente'),
+                    backgroundColor: AppColors.success,
                   ),
                 );
                 Navigator.of(context).pop();
@@ -363,7 +365,7 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text(state.message),
-                    backgroundColor: Colors.red,
+                    backgroundColor: AppColors.error,
                   ),
                 );
               }
@@ -375,7 +377,7 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text('Error cargando términos: ${state.message}'),
-                    backgroundColor: Colors.orange,
+                    backgroundColor: AppColors.warning,
                   ),
                 );
               }
@@ -393,9 +395,13 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
                     width: double.infinity,
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.blue[50],
+                      gradient: LinearGradient(
+                        colors: [AppColors.primaryVeryLight, AppColors.primaryLight.withOpacity(0.3)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
                       border: Border(
-                        bottom: BorderSide(color: Colors.blue[200]!),
+                        bottom: BorderSide(color: AppColors.border),
                       ),
                     ),
                     child: Row(
@@ -408,7 +414,7 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
                               'Total de la Cotización',
                               style: TextStyle(
                                 fontSize: 14,
-                                color: Colors.blue[700],
+                                color: AppColors.quotations,
                               ),
                             ),
                             Text(
@@ -416,7 +422,7 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
                               style: TextStyle(
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.blue[700],
+                                color: AppColors.quotations,
                               ),
                             ),
                           ],
@@ -424,14 +430,15 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
-                            color: Colors.blue[100],
+                            color: AppColors.primaryVeryLight,
                             borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: AppColors.border),
                           ),
                           child: Text(
                             '${_documentLines.length} productos',
                             style: TextStyle(
                               fontSize: 12,
-                              color: Colors.blue[700],
+                              color: AppColors.quotations,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -486,19 +493,19 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
             
             if (_isLoading)
               Container(
-                color: Colors.black.withOpacity(0.5),
-                child: const Center(
+                color: AppColors.shadow.withOpacity(0.8),
+                child: Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+                        valueColor: AlwaysStoppedAnimation<Color>(AppColors.quotations),
                       ),
                       SizedBox(height: 16),
                       Text(
                         'Creando cotización...',
                         style: TextStyle(
-                          color: Colors.white,
+                          color: AppColors.onPrimary,
                           fontSize: 16,
                         ),
                       ),
@@ -511,8 +518,9 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _isLoading ? null : _addNewLine,
-        backgroundColor: Colors.blue[600],
-        child: const Icon(Icons.add, color: Colors.white),
+        backgroundColor: AppColors.quotations,
+        foregroundColor: AppColors.onPrimary,
+        child: const Icon(Icons.add),
       ),
     );
   }
@@ -525,7 +533,7 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
         style: TextStyle(
           fontSize: 18,
           fontWeight: FontWeight.bold,
-          color: Colors.grey[800],
+          color: AppColors.onSurface,
         ),
       ),
     );
@@ -533,6 +541,8 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
 
   Widget _buildCustomerSection() {
     return Card(
+      color: AppColors.surface,
+      shadowColor: AppColors.shadow,
       child: InkWell(
         onTap: _selectCustomer,
         borderRadius: BorderRadius.circular(12),
@@ -541,7 +551,7 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
             border: _selectedCustomer == null 
-                ? Border.all(color: Colors.red.withOpacity(0.5))
+                ? Border.all(color: AppColors.error.withOpacity(0.5))
                 : null,
           ),
           child: _selectedCustomer == null
@@ -549,7 +559,7 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
                   children: [
                     Icon(
                       Icons.person_add,
-                      color: Colors.grey[600],
+                      color: AppColors.textSecondary,
                       size: 32,
                     ),
                     const SizedBox(width: 16),
@@ -562,14 +572,14 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
-                              color: Colors.grey[700],
+                              color: AppColors.onSurface,
                             ),
                           ),
                           Text(
                             'Toca para buscar y seleccionar un cliente',
                             style: TextStyle(
                               fontSize: 14,
-                              color: Colors.grey[600],
+                              color: AppColors.textSecondary,
                             ),
                           ),
                         ],
@@ -577,18 +587,18 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
                     ),
                     Icon(
                       Icons.arrow_forward_ios,
-                      color: Colors.grey[400],
+                      color: AppColors.disabled,
                     ),
                   ],
                 )
               : Row(
                   children: [
                     CircleAvatar(
-                      backgroundColor: Colors.blue[600],
+                      backgroundColor: AppColors.customers,
                       child: Text(
                         _selectedCustomer!.cardCode.substring(0, 2).toUpperCase(),
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style: TextStyle(
+                          color: AppColors.onPrimary,
                           fontWeight: FontWeight.bold,
                           fontSize: 14,
                         ),
@@ -601,16 +611,17 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
                         children: [
                           Text(
                             _selectedCustomer!.displayName,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
+                              color: AppColors.onSurface,
                             ),
                           ),
                           Text(
                             'Código: ${_selectedCustomer!.cardCode}',
                             style: TextStyle(
                               fontSize: 14,
-                              color: Colors.grey[600],
+                              color: AppColors.textSecondary,
                             ),
                           ),
                           if (_selectedCustomer!.licTradNum.isNotEmpty)
@@ -618,7 +629,7 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
                               'NIT: ${_selectedCustomer!.licTradNum}',
                               style: TextStyle(
                                 fontSize: 12,
-                                color: Colors.grey[600],
+                                color: AppColors.textSecondary,
                               ),
                             ),
                         ],
@@ -628,14 +639,14 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
                       children: [
                         Icon(
                           Icons.check_circle,
-                          color: Colors.green[600],
+                          color: AppColors.success,
                         ),
                         const SizedBox(height: 4),
                         Text(
                           'Cambiar',
                           style: TextStyle(
                             fontSize: 12,
-                            color: Colors.blue[600],
+                            color: AppColors.customers,
                           ),
                         ),
                       ],
@@ -649,6 +660,8 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
 
   Widget _buildGeneralInfoSection() {
     return Card(
+      color: AppColors.surface,
+      shadowColor: AppColors.shadow,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -657,9 +670,19 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
               controller: _salesPersonController,
               decoration: InputDecoration(
                 labelText: 'Código de Vendedor (Empleado SAP) *',
-                prefixIcon: const Icon(Icons.badge),
+                labelStyle: TextStyle(color: AppColors.textSecondary),
+                prefixIcon: Icon(Icons.badge, color: AppColors.textSecondary),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: AppColors.border),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: AppColors.border),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: AppColors.primary),
                 ),
                 hintText: _currentUserService.hasSalesPersonData
                     ? _currentUserService.salesPersonFieldDisplay
@@ -671,8 +694,9 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
                     : _currentUserService.hasSapConfiguration
                         ? 'Código obtenido del perfil del usuario'
                         : 'ID del vendedor en SAP',
+                helperStyle: TextStyle(color: AppColors.textSecondary),
                 suffixIcon: _currentUserService.hasSapConfiguration
-                    ? Icon(Icons.verified_user, color: Colors.green[600])
+                    ? Icon(Icons.verified_user, color: AppColors.success)
                     : null,
               ),
               keyboardType: _currentUserService.hasSalesPersonData 
@@ -681,8 +705,8 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
               readOnly: _currentUserService.hasSapConfiguration,
               style: TextStyle(
                 color: _currentUserService.hasSapConfiguration 
-                    ? Colors.green[700] 
-                    : null,
+                    ? AppColors.success 
+                    : AppColors.onSurface,
                 fontWeight: _currentUserService.hasSapConfiguration 
                     ? FontWeight.bold 
                     : null,
@@ -704,12 +728,24 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
               controller: _commentsController,
               decoration: InputDecoration(
                 labelText: 'Comentarios',
-                prefixIcon: const Icon(Icons.comment),
+                labelStyle: TextStyle(color: AppColors.textSecondary),
+                prefixIcon: Icon(Icons.comment, color: AppColors.textSecondary),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: AppColors.border),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: AppColors.border),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: AppColors.primary),
                 ),
                 hintText: 'Comentarios adicionales sobre la cotización...',
+                hintStyle: TextStyle(color: AppColors.textSecondary),
               ),
+              style: TextStyle(color: AppColors.onSurface),
               maxLines: 3,
             ),
           ],
@@ -723,16 +759,19 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
       builder: (context, state) {
         if (state is TermsConditionsLoading) {
           return Card(
+            color: AppColors.surface,
             child: Padding(
               padding: const EdgeInsets.all(32),
               child: Column(
                 children: [
-                  const CircularProgressIndicator(),
+                  CircularProgressIndicator(
+                    color: AppColors.primary,
+                  ),
                   const SizedBox(height: 16),
                   Text(
                     'Cargando términos y condiciones...',
                     style: TextStyle(
-                      color: Colors.grey[600],
+                      color: AppColors.textSecondary,
                       fontSize: 16,
                     ),
                     textAlign: TextAlign.center,
@@ -745,20 +784,21 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
 
         if (state is TermsConditionsError) {
           return Card(
+            color: AppColors.surface,
             child: Padding(
               padding: const EdgeInsets.all(32),
               child: Column(
                 children: [
                   Icon(
                     Icons.error_outline,
-                    color: Colors.red[400],
+                    color: AppColors.error,
                     size: 48,
                   ),
                   const SizedBox(height: 16),
                   Text(
                     'Error al cargar términos y condiciones',
                     style: TextStyle(
-                      color: Colors.red[600],
+                      color: AppColors.error,
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
                     ),
@@ -768,7 +808,7 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
                   Text(
                     state.message,
                     style: TextStyle(
-                      color: Colors.grey[600],
+                      color: AppColors.textSecondary,
                       fontSize: 14,
                     ),
                     textAlign: TextAlign.center,
@@ -781,8 +821,8 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
                     icon: const Icon(Icons.refresh),
                     label: const Text('Reintentar'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue[600],
-                      foregroundColor: Colors.white,
+                      backgroundColor: AppColors.quotations,
+                      foregroundColor: AppColors.onPrimary,
                     ),
                   ),
                 ],
@@ -793,20 +833,21 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
 
         if (state is! TermsConditionsLoaded) {
           return Card(
+            color: AppColors.surface,
             child: Padding(
               padding: const EdgeInsets.all(32),
               child: Column(
                 children: [
                   Icon(
                     Icons.info_outline,
-                    color: Colors.blue[400],
+                    color: AppColors.info,
                     size: 48,
                   ),
                   const SizedBox(height: 16),
                   Text(
                     'No hay datos disponibles',
                     style: TextStyle(
-                      color: Colors.grey[600],
+                      color: AppColors.textSecondary,
                       fontSize: 16,
                     ),
                   ),
@@ -818,8 +859,8 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
                     icon: const Icon(Icons.download),
                     label: const Text('Cargar términos'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue[600],
-                      foregroundColor: Colors.white,
+                      backgroundColor: AppColors.quotations,
+                      foregroundColor: AppColors.onPrimary,
                     ),
                   ),
                 ],
@@ -831,6 +872,8 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
         final termsConditions = state.termsConditions;
 
         return Card(
+          color: AppColors.surface,
+          shadowColor: AppColors.shadow,
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -897,9 +940,19 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
     return DropdownButtonFormField<T>(
       decoration: InputDecoration(
         labelText: label,
-        prefixIcon: Icon(icon),
+        labelStyle: TextStyle(color: AppColors.textSecondary),
+        prefixIcon: Icon(icon, color: AppColors.textSecondary),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: AppColors.border),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: AppColors.border),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: AppColors.primary),
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
       ),
@@ -909,13 +962,20 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
           value: item,
           child: Text(
             itemBuilder(item),
-            style: const TextStyle(fontSize: 14),
+            style: TextStyle(
+              fontSize: 14,
+              color: AppColors.onSurface,
+            ),
           ),
         );
       }).toList(),
       onChanged: onChanged,
-      hint: Text('Seleccionar $label'),
+      hint: Text(
+        'Seleccionar $label',
+        style: TextStyle(color: AppColors.textSecondary),
+      ),
       isExpanded: true,
+      dropdownColor: AppColors.surface,
       validator: (value) {
         if (value == null) {
           return 'Seleccione una opción';
@@ -927,6 +987,8 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
 
   Widget _buildLocationSection() {
     return Card(
+      color: AppColors.surface,
+      shadowColor: AppColors.shadow,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Row(
@@ -934,7 +996,7 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
             // Icono de estado
             Icon(
               _hasLocationData ? Icons.check_circle : Icons.location_off,
-              color: _hasLocationData ? Colors.green[600] : Colors.red[600],
+              color: _hasLocationData ? AppColors.success : AppColors.error,
               size: 24,
             ),
             const SizedBox(width: 12),
@@ -950,7 +1012,7 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
-                  color: _hasLocationData ? Colors.green[700] : Colors.red[700],
+                  color: _hasLocationData ? AppColors.success : AppColors.error,
                 ),
               ),
             ),
@@ -962,7 +1024,7 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
                 height: 20,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.blue[600]!),
+                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.quotations),
                 ),
               )
             else if (!_hasLocationData)
@@ -971,8 +1033,8 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
                 icon: const Icon(Icons.my_location, size: 18),
                 label: const Text('Reintentar'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue[600],
-                  foregroundColor: Colors.white,
+                  backgroundColor: AppColors.quotations,
+                  foregroundColor: AppColors.onPrimary,
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
@@ -990,6 +1052,8 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
       children: [
         if (_documentLines.isEmpty)
           Card(
+            color: AppColors.surface,
+            shadowColor: AppColors.shadow,
             child: Padding(
               padding: const EdgeInsets.all(32),
               child: Column(
@@ -997,7 +1061,7 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
                   Icon(
                     Icons.inventory_2_outlined,
                     size: 64,
-                    color: Colors.grey[400],
+                    color: AppColors.disabled,
                   ),
                   const SizedBox(height: 16),
                   Text(
@@ -1005,7 +1069,7 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: Colors.grey[600],
+                      color: AppColors.textSecondary,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -1013,7 +1077,7 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
                     'Presiona el botón + para agregar productos a la cotización',
                     style: TextStyle(
                       fontSize: 14,
-                      color: Colors.grey[500],
+                      color: AppColors.textSecondary.withOpacity(0.8),
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -1035,6 +1099,8 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       elevation: 3,
+      color: AppColors.surface,
+      shadowColor: AppColors.shadow,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -1046,22 +1112,23 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: Colors.blue[100],
+                    color: AppColors.primaryVeryLight,
                     borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: AppColors.border),
                   ),
                   child: Text(
                     'Producto ${index + 1}',
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
-                      color: Colors.blue[700],
+                      color: AppColors.quotations,
                     ),
                   ),
                 ),
                 IconButton(
                   onPressed: () => _removeLine(index),
                   icon: const Icon(Icons.delete_outline),
-                  color: Colors.red[400],
+                  color: AppColors.error,
                   tooltip: 'Eliminar producto',
                 ),
               ],
@@ -1076,21 +1143,21 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
                 decoration: BoxDecoration(
                   border: Border.all(
                     color: line.selectedItem == null 
-                        ? Colors.red.withOpacity(0.5) 
-                        : Colors.green[300]!,
+                        ? AppColors.error.withOpacity(0.5) 
+                        : AppColors.success,
                     width: 2,
                   ),
                   borderRadius: BorderRadius.circular(12),
                   color: line.selectedItem == null 
-                      ? Colors.grey[50] 
-                      : Colors.green[50],
+                      ? AppColors.surfaceVariant 
+                      : AppColors.success.withOpacity(0.1),
                 ),
                 child: line.selectedItem == null
                     ? Row(
                         children: [
                           Icon(
                             Icons.add_shopping_cart,
-                            color: Colors.grey[600],
+                            color: AppColors.textSecondary,
                             size: 28,
                           ),
                           const SizedBox(width: 16),
@@ -1103,14 +1170,14 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
                                   style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
-                                    color: Colors.grey[700],
+                                    color: AppColors.onSurface,
                                   ),
                                 ),
                                 Text(
                                   'Toca para buscar y seleccionar un item',
                                   style: TextStyle(
                                     fontSize: 14,
-                                    color: Colors.grey[600],
+                                    color: AppColors.textSecondary,
                                   ),
                                 ),
                               ],
@@ -1118,7 +1185,7 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
                           ),
                           Icon(
                             Icons.arrow_forward_ios,
-                            color: Colors.grey[400],
+                            color: AppColors.disabled,
                             size: 18,
                           ),
                         ],
@@ -1128,12 +1195,12 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
                           Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: Colors.green[600],
+                              color: AppColors.items,
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            child: const Icon(
+                            child: Icon(
                               Icons.inventory_2,
-                              color: Colors.white,
+                              color: AppColors.onSuccess,
                               size: 20,
                             ),
                           ),
@@ -1144,16 +1211,17 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
                               children: [
                                 Text(
                                   line.selectedItem!.displayName,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
+                                    color: AppColors.onSurface,
                                   ),
                                 ),
                                 Text(
                                   'Código: ${line.selectedItem!.itemCode}',
                                   style: TextStyle(
                                     fontSize: 14,
-                                    color: Colors.grey[600],
+                                    color: AppColors.textSecondary,
                                   ),
                                 ),
                               ],
@@ -1163,7 +1231,7 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
                             children: [
                               Icon(
                                 Icons.check_circle,
-                                color: Colors.green[600],
+                                color: AppColors.success,
                                 size: 20,
                               ),
                               const SizedBox(height: 4),
@@ -1171,7 +1239,7 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
                                 'Cambiar',
                                 style: TextStyle(
                                   fontSize: 12,
-                                  color: Colors.green[600],
+                                  color: AppColors.success,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
@@ -1202,13 +1270,23 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
                     initialValue: line.quantity.toString(),
                     decoration: InputDecoration(
                       labelText: 'Cantidad *',
-                      prefixIcon: const Icon(Icons.plus_one),
+                      labelStyle: TextStyle(color: AppColors.textSecondary),
+                      prefixIcon: Icon(Icons.plus_one, color: AppColors.textSecondary),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: AppColors.border),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: AppColors.border),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: AppColors.primary),
                       ),
                       suffixText: line.selectedUom?.uomCode ?? '',
-                      
                     ),
+                    style: TextStyle(color: AppColors.onSurface),
                     keyboardType: TextInputType.numberWithOptions(decimal: true),
                     onChanged: (value) {
                       final quantity = double.tryParse(value) ?? 0.0;
@@ -1238,12 +1316,23 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
                     initialValue: line.priceAfterVAT.toString(),
                     decoration: InputDecoration(
                       labelText: 'Precio *',
-                      prefixIcon: const Icon(Icons.money),
+                      labelStyle: TextStyle(color: AppColors.textSecondary),
+                      prefixIcon: Icon(Icons.money, color: AppColors.textSecondary),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: AppColors.border),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: AppColors.border),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: AppColors.primary),
                       ),
                       prefixText: 'Bs. ',
                     ),
+                    style: TextStyle(color: AppColors.onSurface),
                     keyboardType: TextInputType.numberWithOptions(decimal: true),
                     onChanged: (value) {
                       final price = double.tryParse(value) ?? 0.0;
@@ -1278,12 +1367,12 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [Colors.blue[50]!, Colors.blue[100]!],
+                  colors: [AppColors.primaryVeryLight, AppColors.primaryLight.withOpacity(0.2)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.blue[200]!),
+                border: Border.all(color: AppColors.border),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1295,7 +1384,7 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
                         'Total de esta línea:',
                         style: TextStyle(
                           fontSize: 14,
-                          color: Colors.blue[700],
+                          color: AppColors.quotations,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -1303,7 +1392,7 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
                         '${line.quantity} x Bs. ${NumberFormat('#,##0.00').format(line.priceAfterVAT)}',
                         style: TextStyle(
                           fontSize: 12,
-                          color: Colors.blue[600],
+                          color: AppColors.textSecondary,
                         ),
                       ),
                     ],
@@ -1312,7 +1401,7 @@ class _CreateQuotationScreenState extends State<CreateQuotationScreen> {
                     'Bs. ${NumberFormat('#,##0.00').format(line.quantity * line.priceAfterVAT)}',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      color: Colors.blue[700],
+                      color: AppColors.quotations,
                       fontSize: 18,
                     ),
                   ),

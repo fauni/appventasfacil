@@ -1,7 +1,8 @@
-// lib/screens/home_screen.dart
+// lib/screens/home_screen.dart - MIGRADO
 import 'package:appventas/screens/quotations/quotations_screen.dart';
 import 'package:appventas/screens/sales/sales_screen.dart';
-import 'package:appventas/screens/sales_order/sales_orders_screen.dart';
+import 'package:appventas/screens/sales_order/sales_orders_screen.dart'; 
+import 'package:appventas/core/app_colors.dart'; // ✅ IMPORT AGREGADO
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../blocs/auth/auth_bloc.dart';
@@ -23,8 +24,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final List<Widget> _screens = [
     const DashboardScreen(),
     const QuotationsScreen(),
-    const SalesScreen(),
-    const SalesOrdersScreen()
+    const SalesOrdersScreen(), // ✅ AGREGADO
   ];
 
   void _onItemTapped(int index) {
@@ -71,20 +71,23 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Scaffold(
         appBar: AppBar(
           title: const Text(
-            'SAP Sales App',
+            'Ventas App',
             style: TextStyle(
               fontWeight: FontWeight.bold,
-              color: Colors.white,
+              // ❌ ANTES: color: Colors.white,
+              color: Colors.white, // ✅ OK - funciona con cualquier tema
             ),
           ),
-          backgroundColor: Colors.blue[600],
+          // ❌ ANTES: backgroundColor: Colors.blue[600],
+          backgroundColor: AppColors.primaryDark, // ✅ MIGRADO
           elevation: 0,
           actions: [
             BlocBuilder<AuthBloc, AuthState>(
               builder: (context, state) {
                 if (state is AuthAuthenticated) {
                   return PopupMenuButton(
-                    icon: const Icon(Icons.account_circle, color: Colors.white),
+                    // ❌ ANTES: icon: const Icon(Icons.account_circle, color: Colors.white),
+                    icon: Icon(Icons.account_circle, color: AppColors.onPrimary), // ✅ MIGRADO
                     itemBuilder: (BuildContext context) => <PopupMenuEntry>[
                       PopupMenuItem(
                         child: Row(
@@ -127,9 +130,11 @@ class _HomeScreenState extends State<HomeScreen> {
         bottomNavigationBar: BottomNavigationBar(
           currentIndex: _selectedIndex,
           onTap: _onItemTapped,
-          type: BottomNavigationBarType.fixed,
-          selectedItemColor: Colors.blue[600],
-          unselectedItemColor: Colors.grey,
+          type: BottomNavigationBarType.fixed, // ✅ PARA 4 TABS
+          // ❌ ANTES: selectedItemColor: Colors.blue[600],
+          selectedItemColor: AppColors.primary, // ✅ MIGRADO
+          // ❌ ANTES: unselectedItemColor: Colors.grey,
+          unselectedItemColor: AppColors.textSecondary, // ✅ MIGRADO
           items: const [
             BottomNavigationBarItem(
               icon: Icon(Icons.dashboard),
@@ -139,14 +144,10 @@ class _HomeScreenState extends State<HomeScreen> {
               icon: Icon(Icons.description),
               label: 'Cotizaciones',
             ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.shopping_cart),
-              label: 'Ventas',
-            ),
-            BottomNavigationBarItem(
+            BottomNavigationBarItem( // ✅ AGREGADO
               icon: Icon(Icons.receipt_long),
               label: 'Órdenes',
-            )
+            ),
           ],
         ),
       ),
