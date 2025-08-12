@@ -16,10 +16,12 @@ import 'package:appventas/models/item/item.dart';
 import 'package:appventas/models/payment_group/payment_group.dart';
 import 'package:appventas/models/user_serie.dart';
 import 'package:appventas/models/sales_order/sales_order_dto.dart';
+import 'package:appventas/models/warehouse/warehouse.dart';
 import 'package:appventas/screens/customers/customer_selection_screen.dart';
 import 'package:appventas/screens/items/item_selection_screen.dart';
 import 'package:appventas/screens/payment_group/payment_group_selection_screen.dart';
 import 'package:appventas/services/current_user_service.dart';
+import 'package:appventas/widgets/warehouse_selector_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
@@ -50,6 +52,8 @@ class _CreateSalesOrderScreenState extends State<CreateSalesOrderScreen> {
   Customer? _selectedCustomer;
   PaymentGroup? _selectedPaymentGroup;
   UserSerie? _selectedSeries;
+  Warehouse? _selectedWarehouse;
+
 
   @override
   void initState() {
@@ -1164,20 +1168,34 @@ class _CreateSalesOrderScreenState extends State<CreateSalesOrderScreen> {
               ],
             ),
             const SizedBox(height: 12),
-            TextFormField(
-              controller: _warehouseController,
-              decoration: InputDecoration(
-                labelText: 'Código de Almacén',
-                border: const OutlineInputBorder(),
-                prefixIcon: const Icon(Icons.inventory),
-                hintText: _currentUserService.currentUser?.almacenCode != null
-                    ? 'Por defecto: ${_currentUserService.currentUser!.almacenCode}'
-                    : 'Ej: ALM01',
-                helperText: _currentUserService.currentUser?.almacenCode != null
-                    ? 'Dejar vacío para usar el almacén del usuario'
-                    : 'Código del almacén en SAP',
-              ),
+            WarehouseSelectorWidget(
+              selectedWarehouse: _selectedWarehouse,
+              onWarehouseSelected: (warehouse) {
+                setState(() {
+                  _selectedWarehouse = warehouse;
+                  if (warehouse != null) {
+                    _warehouseController.text = warehouse.whsCode;
+                  } else {
+                    _warehouseController.clear();
+                  }
+                });
+              },
+              labelText: 'Almacén por Defecto',
+              hintText: _currentUserService.currentUser?.almacenCode != null
+                  ? 'Por defecto: ${_currentUserService.currentUser!.almacenCode}'
+                  : 'Seleccionar almacén',
+              isRequired: false,
             ),
+            if (_currentUserService.currentUser?.almacenCode != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Text(
+                  'Si no selecciona un almacén, se usará: ${_currentUserService.currentUser!.almacenCode}',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Colors.grey[600],
+                  ),
+                ),
+              ),
           ],
         ),
       ),

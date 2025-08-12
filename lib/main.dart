@@ -5,6 +5,7 @@ import 'package:appventas/blocs/sales/sales_bloc.dart';
 import 'package:appventas/blocs/sales_orders/sales_orders_bloc.dart';
 import 'package:appventas/blocs/terms_conditions/terms_conditions_bloc.dart';
 import 'package:appventas/blocs/user_series/user_series_bloc.dart';
+import 'package:appventas/blocs/warehouse/warehouse_bloc.dart';
 import 'package:appventas/models/user_serie.dart';
 import 'package:appventas/services/current_user_service.dart';
 import 'package:flutter/material.dart';
@@ -52,7 +53,8 @@ class MyApp extends StatelessWidget {
         BlocProvider<UomBloc>(create: (context) => UomBloc()), // Nuevo BlocProvider
         BlocProvider<TermsConditionsBloc>(create: (context) => TermsConditionsBloc()),
         BlocProvider<PaymentGroupBloc>(create: (context) => PaymentGroupBloc()),
-        BlocProvider<UserSeriesBloc>(create: (context) => UserSeriesBloc())
+        BlocProvider<UserSeriesBloc>(create: (context) => UserSeriesBloc()),
+        BlocProvider<WarehouseBloc>(create: (context) => WarehouseBloc())
       ],
       child: MaterialApp(
         title: 'SAP Sales App',
