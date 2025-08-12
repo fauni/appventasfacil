@@ -1,11 +1,9 @@
-// lib/screens/dashboard_screen.dart - MIGRADO
+import 'package:appventas/blocs/sales_orders/sales_orders_event.dart';
 import 'package:appventas/screens/quotations/create_quotation_screen.dart';
-import 'package:appventas/screens/quotations/create_quotation_screen_with_autocomplete.dart';
-import 'package:appventas/screens/sales_order/create_sales_order_screen.dart'; // ✅ AGREGADO
-import 'package:appventas/blocs/sales_order/sales_order_bloc.dart'; // ✅ AGREGADO
-import 'package:appventas/blocs/sales_order/sales_order_state.dart'; // ✅ AGREGADO
-import 'package:appventas/blocs/sales_order/sales_order_event.dart'; // ✅ AGREGADO
-import 'package:appventas/core/app_colors.dart'; // ✅ IMPORT AGREGADO
+import 'package:appventas/screens/sales_order/create_sales_order_screen.dart'; 
+import 'package:appventas/blocs/sales_orders/sales_orders_bloc.dart'; 
+import 'package:appventas/blocs/sales_orders/sales_orders_state.dart';
+import 'package:appventas/core/app_colors.dart';  
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../blocs/auth/auth_bloc.dart';
@@ -26,7 +24,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void initState() {
     super.initState();
     // ✅ AGREGADO: Cargar datos de órdenes
-    context.read<SalesOrderBloc>().add(SalesOrderLoadRequested());
+    context.read<SalesOrdersBloc>().add(SalesOrdersLoadRequested());
   }
 
   @override
@@ -92,7 +90,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       MaterialPageRoute(
                         builder: (context) => MultiBlocProvider(
                           providers: [
-                            BlocProvider.value(value: context.read<SalesOrderBloc>()),
+                            BlocProvider.value(value: context.read<SalesOrdersBloc>()),
                             BlocProvider.value(value: context.read<CustomerBloc>()),
                             BlocProvider.value(value: context.read<ItemBloc>()),
                             BlocProvider.value(value: context.read<UomBloc>()),
@@ -292,9 +290,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ],
             ),
             const SizedBox(height: 16),
-            BlocBuilder<SalesOrderBloc, SalesOrderState>(
+            BlocBuilder<SalesOrdersBloc, SalesOrdersState>(
               builder: (context, state) {
-                if (state is SalesOrderLoading) {
+                if (state is SalesOrdersLoading) {
                   return const Center(
                     child: SizedBox(
                       height: 20,
@@ -304,8 +302,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   );
                 }
                 
-                if (state is SalesOrderLoaded) {
-                  final orders = state.salesOrders;
+                if (state is SalesOrdersLoaded) {
+                  final orders = state.response.orders;
                   final openOrders = orders.where((o) => 
                     o.docStatus.toLowerCase() == 'o' || o.docStatus.toLowerCase() == 'open'
                   ).length;

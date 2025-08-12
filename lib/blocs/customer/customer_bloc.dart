@@ -1,4 +1,3 @@
-// lib/blocs/customer/customer_bloc.dart
 import 'package:appventas/services/http_client.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:appventas/models/customer/customer.dart';

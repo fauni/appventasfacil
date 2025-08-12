@@ -4,7 +4,6 @@ import 'package:appventas/models/customer/customer.dart';
 import 'package:appventas/services/api_service.dart';
 import 'package:appventas/services/http_client.dart';
 import 'package:appventas/services/storage_service.dart';
-import 'package:http/http.dart' as http;
 
 
 class CustomerService {

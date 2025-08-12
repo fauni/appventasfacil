@@ -12,6 +12,8 @@ class Customer extends Equatable {
   final String currency;
   final int slpCode;
   final int listNum;
+  final int groupNum;
+  final String pymntGroup;
 
   const Customer({
     required this.cardCode,
@@ -24,6 +26,8 @@ class Customer extends Equatable {
     required this.currency,
     required this.slpCode,
     required this.listNum,
+    this.groupNum = 0,
+    this.pymntGroup = '',
   });
 
   factory Customer.fromJson(Map<String, dynamic> json) {
@@ -38,6 +42,8 @@ class Customer extends Equatable {
       currency: json['currency'] ?? '',
       slpCode: json['slpCode'] ?? 0,
       listNum: json['listNum'] ?? 0,
+      groupNum: json['groupNum'] ?? 0,
+      pymntGroup: json['pymntGroup'] ?? '',
     );
   }
 
@@ -53,6 +59,8 @@ class Customer extends Equatable {
       'currency': currency,
       'slpCode': slpCode,
       'listNum': listNum,
+      'groupNum': groupNum,
+      'pymntGroup': pymntGroup,
     };
   }
 
@@ -71,6 +79,8 @@ class Customer extends Equatable {
     currency,
     slpCode,
     listNum,
+    groupNum,
+    pymntGroup,
   ];
 }
 

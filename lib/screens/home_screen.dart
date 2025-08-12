@@ -1,7 +1,6 @@
 // lib/screens/home_screen.dart - MIGRADO
 import 'package:appventas/screens/quotations/quotations_screen.dart';
-import 'package:appventas/screens/sales/sales_screen.dart';
-import 'package:appventas/screens/sales_order/sales_orders_screen.dart'; 
+import 'package:appventas/screens/sales_order/sales_orders_list_screen.dart'; 
 import 'package:appventas/core/app_colors.dart'; // ✅ IMPORT AGREGADO
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -24,7 +23,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final List<Widget> _screens = [
     const DashboardScreen(),
     const QuotationsScreen(),
-    const SalesOrdersScreen(), // ✅ AGREGADO
+    const SalesOrdersListScreen(), // ✅ AGREGADO
   ];
 
   void _onItemTapped(int index) {
