@@ -19,6 +19,12 @@ class ItemBloc extends Bloc<ItemEvent, ItemState> {
     on<ItemByCodeRequested>(_onItemByCodeRequested);
     on<ItemSearchCleared>(_onItemSearchCleared);
     on<ItemSelectionCleared>(_onItemSelectionCleared);
+
+    // Nuevos handlers para stock
+    on<ItemStockRequested>(_onItemStockRequested);
+    on<ItemStockValidationRequested>(_onItemStockValidationRequested);
+    on<ItemLowStockRequested>(_onItemLowStockRequested);
+    on<ItemOutOfStockRequested>(_onItemOutOfStockRequested);
   }
 
   Future<void> _onItemSearchRequested(
@@ -186,5 +192,97 @@ class ItemBloc extends Bloc<ItemEvent, ItemState> {
   ) {
     _selectedItem = null;
     emit(ItemInitial());
+  }
+
+  // Nuevos handlers para stock
+  Future<void> _onItemStockRequested(
+    ItemStockRequested event,
+    Emitter<ItemState> emit,
+  ) async {
+    try {
+      emit(ItemLoading());
+      
+      final stock = await ItemService.getItemStock(event.itemCode);
+      
+      emit(ItemStockLoaded(
+        itemCode: event.itemCode,
+        stock: stock,
+      ));
+    } on UnauthorizedException {
+      print('🔓 Sesión expirada detectada en get item stock');
+    } catch (e) {
+      emit(ItemError('Error al obtener stock: ${e.toString()}'));
+    }
+  }
+
+  Future<void> _onItemStockValidationRequested(
+    ItemStockValidationRequested event,
+    Emitter<ItemState> emit,
+  ) async {
+    try {
+      emit(ItemLoading());
+      
+      final hasEnoughStock = await ItemService.hasEnoughStock(
+        event.itemCode,
+        event.requiredQuantity,
+      );
+      
+      final availableStock = await ItemService.getItemStock(event.itemCode);
+      
+      emit(ItemStockValidated(
+        itemCode: event.itemCode,
+        requiredQuantity: event.requiredQuantity,
+        availableStock: availableStock,
+        hasEnoughStock: hasEnoughStock,
+      ));
+    } on UnauthorizedException {
+      print('🔓 Sesión expirada detectada en validación de stock');
+    } catch (e) {
+      emit(ItemError('Error al validar stock: ${e.toString()}'));
+    }
+  }
+
+  Future<void> _onItemLowStockRequested(
+    ItemLowStockRequested event,
+    Emitter<ItemState> emit,
+  ) async {
+    try {
+      emit(ItemLoading());
+      
+      final lowStockItems = await ItemService.getItemsWithLowStock(
+        minStock: event.minStock,
+        pageSize: event.pageSize,
+      );
+      
+      emit(ItemLowStockLoaded(
+        lowStockItems: lowStockItems,
+        minStock: event.minStock,
+      ));
+    } on UnauthorizedException {
+      print('🔓 Sesión expirada detectada en items con stock bajo');
+    } catch (e) {
+      emit(ItemError('Error al obtener items con stock bajo: ${e.toString()}'));
+    }
+  }
+
+  Future<void> _onItemOutOfStockRequested(
+    ItemOutOfStockRequested event,
+    Emitter<ItemState> emit,
+  ) async {
+    try {
+      emit(ItemLoading());
+      
+      final outOfStockItems = await ItemService.getItemsOutOfStock(
+        pageSize: event.pageSize,
+      );
+      
+      emit(ItemOutOfStockLoaded(
+        outOfStockItems: outOfStockItems,
+      ));
+    } on UnauthorizedException {
+      print('🔓 Sesión expirada detectada en items sin stock');
+    } catch (e) {
+      emit(ItemError('Error al obtener items sin stock: ${e.toString()}'));
+    }
   }
 }

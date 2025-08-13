@@ -244,7 +244,7 @@ class _CreateSalesOrderScreenState extends State<CreateSalesOrderScreen> {
       final item = await Navigator.push<Item>(
         context,
         MaterialPageRoute(
-          builder: (context) => const ItemSelectionScreen(),
+          builder: (context) => const ItemSelectionScreen(requiredQuantity: 1.0,),
         ),
       );
       if (item != null) {

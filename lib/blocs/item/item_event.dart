@@ -68,3 +68,48 @@ class ItemByCodeRequested extends ItemEvent {
 class ItemSearchCleared extends ItemEvent {}
 
 class ItemSelectionCleared extends ItemEvent {}
+
+// Nuevos eventos para manejo de stock
+class ItemStockRequested extends ItemEvent {
+  final String itemCode;
+
+  const ItemStockRequested(this.itemCode);
+
+  @override
+  List<Object> get props => [itemCode];
+}
+
+class ItemStockValidationRequested extends ItemEvent {
+  final String itemCode;
+  final double requiredQuantity;
+
+  const ItemStockValidationRequested({
+    required this.itemCode,
+    required this.requiredQuantity,
+  });
+
+  @override
+  List<Object> get props => [itemCode, requiredQuantity];
+}
+
+class ItemLowStockRequested extends ItemEvent {
+  final double minStock;
+  final int pageSize;
+
+  const ItemLowStockRequested({
+    this.minStock = 10.0,
+    this.pageSize = 50,
+  });
+
+  @override
+  List<Object> get props => [minStock, pageSize];
+}
+
+class ItemOutOfStockRequested extends ItemEvent {
+  final int pageSize;
+
+  const ItemOutOfStockRequested({this.pageSize = 50});
+
+  @override
+  List<Object> get props => [pageSize];
+}

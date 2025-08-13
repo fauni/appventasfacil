@@ -94,3 +94,58 @@ class ItemError extends ItemState {
   @override
   List<Object> get props => [message];
 }
+
+// Nuevos estados para manejo de stock
+class ItemStockLoaded extends ItemState {
+  final String itemCode;
+  final double stock;
+
+  const ItemStockLoaded({
+    required this.itemCode,
+    required this.stock,
+  });
+
+  @override
+  List<Object> get props => [itemCode, stock];
+}
+
+class ItemStockValidated extends ItemState {
+  final String itemCode;
+  final double requiredQuantity;
+  final double availableStock;
+  final bool hasEnoughStock;
+
+  const ItemStockValidated({
+    required this.itemCode,
+    required this.requiredQuantity,
+    required this.availableStock,
+    required this.hasEnoughStock,
+  });
+
+  @override
+  List<Object> get props => [itemCode, requiredQuantity, availableStock, hasEnoughStock];
+}
+
+class ItemLowStockLoaded extends ItemState {
+  final List<Item> lowStockItems;
+  final double minStock;
+
+  const ItemLowStockLoaded({
+    required this.lowStockItems,
+    required this.minStock,
+  });
+
+  @override
+  List<Object> get props => [lowStockItems, minStock];
+}
+
+class ItemOutOfStockLoaded extends ItemState {
+  final List<Item> outOfStockItems;
+
+  const ItemOutOfStockLoaded({
+    required this.outOfStockItems,
+  });
+
+  @override
+  List<Object> get props => [outOfStockItems];
+}
