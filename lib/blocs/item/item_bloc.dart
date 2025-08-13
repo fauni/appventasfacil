@@ -25,6 +25,8 @@ class ItemBloc extends Bloc<ItemEvent, ItemState> {
     on<ItemStockValidationRequested>(_onItemStockValidationRequested);
     on<ItemLowStockRequested>(_onItemLowStockRequested);
     on<ItemOutOfStockRequested>(_onItemOutOfStockRequested);
+
+    on<ItemWarehouseStockRequested>(_onWarehouseStockRequested);
   }
 
   Future<void> _onItemSearchRequested(
@@ -283,6 +285,21 @@ class ItemBloc extends Bloc<ItemEvent, ItemState> {
       print('🔓 Sesión expirada detectada en items sin stock');
     } catch (e) {
       emit(ItemError('Error al obtener items sin stock: ${e.toString()}'));
+    }
+  }
+
+  Future<void> _onWarehouseStockRequested(
+    ItemWarehouseStockRequested event,
+    Emitter<ItemState> emit,
+  ) async {
+    emit(ItemWarehouseStockLoading(event.itemCode));
+    try {
+      final stockResponse = await ItemService.getItemStockByWarehouses(event.itemCode);
+      emit(ItemWarehouseStockLoaded(stockResponse));
+    } on UnauthorizedException {
+      emit(const ItemError('Sesión expirada. Por favor, inicie sesión nuevamente.'));
+    } catch (e) {
+      emit(ItemError('Error al obtener stock por almacenes: $e'));
     }
   }
 }

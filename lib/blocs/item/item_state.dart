@@ -1,4 +1,5 @@
 import 'package:appventas/models/item/item.dart';
+import 'package:appventas/models/item/item_warehouse_stock.dart';
 import 'package:equatable/equatable.dart';
 
 abstract class ItemState extends Equatable {
@@ -148,4 +149,23 @@ class ItemOutOfStockLoaded extends ItemState {
 
   @override
   List<Object> get props => [outOfStockItems];
+}
+
+// Metodos para obtener el stock de un item por almacen 
+class ItemWarehouseStockLoaded extends ItemState {
+  final ItemWarehouseStockResponse stockResponse;
+
+  const ItemWarehouseStockLoaded(this.stockResponse);
+
+  @override
+  List<Object> get props => [stockResponse];
+}
+
+class ItemWarehouseStockLoading extends ItemState {
+  final String itemCode;
+
+  const ItemWarehouseStockLoading(this.itemCode);
+
+  @override
+  List<Object> get props => [itemCode];
 }

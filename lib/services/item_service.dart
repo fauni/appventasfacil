@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:appventas/models/item/item.dart';
+import 'package:appventas/models/item/item_warehouse_stock.dart';
 import 'package:appventas/services/api_service.dart';
 import 'package:appventas/services/http_client.dart';
 import 'package:appventas/services/storage_service.dart';
@@ -162,6 +163,35 @@ class ItemService {
       return response.items.where((item) => item.stock <= 0).toList();
     } catch (e) {
       throw Exception('Error obteniendo items sin stock: $e');
+    }
+  }
+
+  /// Obtener stock de un item por todos los almacenes
+  static Future<ItemWarehouseStockResponse> getItemStockByWarehouses(String itemCode) async {
+    try {
+      final token = await StorageService.getToken();
+      
+      if (token == null) {
+        throw UnauthorizedException('No hay token de autenticación');
+      }
+
+      final response = await HttpClient.get(
+        '${ApiService.baseUrl}/Item/$itemCode/stock-by-warehouses',
+        token: token,
+      );
+
+      if (response.statusCode == 200) {
+        final jsonResponse = jsonDecode(response.body);
+        return ItemWarehouseStockResponse.fromJson(jsonResponse['data']);
+      } else if (response.statusCode == 404) {
+        throw Exception('Item no encontrado');
+      } else {
+        throw Exception('Error al obtener stock por almacenes: ${response.statusCode}');
+      }
+    } on UnauthorizedException {
+      rethrow;
+    } catch (e) {
+      throw Exception('Error de red: $e');
     }
   }
 }

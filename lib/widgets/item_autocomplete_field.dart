@@ -317,6 +317,7 @@ class _ItemAutocompleteFieldState extends State<ItemAutocompleteField> {
                           itemCode: suggestion.itemCode,
                           itemName: suggestion.itemName,
                           ugpEntry: suggestion.ugpEntry,
+                          stock: suggestion.stock
                         );
 
                         return ListTile(

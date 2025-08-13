@@ -113,3 +113,12 @@ class ItemOutOfStockRequested extends ItemEvent {
   @override
   List<Object> get props => [pageSize];
 }
+
+class ItemWarehouseStockRequested extends ItemEvent {
+  final String itemCode;
+
+  const ItemWarehouseStockRequested(this.itemCode);
+
+  @override
+  List<Object> get props => [itemCode];
+}

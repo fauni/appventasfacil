@@ -1,5 +1,6 @@
 // lib/screens/items/item_selection_screen.dart
 import 'package:appventas/models/item/item.dart';
+import 'package:appventas/widgets/warehouse_stock_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:appventas/blocs/item/item_bloc.dart';
@@ -157,6 +158,17 @@ class _ItemSelectionScreenState extends State<ItemSelectionScreen> {
     _onSearchChanged(_searchController.text);
   }
 
+  String _getAppBarTitle() {
+    switch (_currentView) {
+      case 'lowStock':
+        return 'Items con Stock Bajo';
+      case 'outOfStock':
+        return 'Items sin Stock';
+      default:
+        return 'Seleccionar Item';
+    }
+  }
+
   Color _getStockColor(double stock) {
     if (stock <= 0) return Colors.red;
     if (stock < 10) return Colors.orange;
@@ -243,38 +255,38 @@ class _ItemSelectionScreenState extends State<ItemSelectionScreen> {
                   ),
                   
                   // Botones de stock (solo si showStock está habilitado)
-                  if (widget.showStock) ...[
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: _showLowStock,
-                            icon: const Icon(Icons.warning, size: 16),
-                            label: const Text('Stock Bajo'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.orange.shade50,
-                              foregroundColor: Colors.orange.shade700,
-                              side: BorderSide(color: Colors.orange.shade200),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: _showOutOfStock,
-                            icon: const Icon(Icons.error, size: 16),
-                            label: const Text('Sin Stock'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.red.shade50,
-                              foregroundColor: Colors.red.shade700,
-                              side: BorderSide(color: Colors.red.shade200),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+                  // if (widget.showStock) ...[
+                  //   const SizedBox(height: 12),
+                  //   Row(
+                  //     children: [
+                  //       Expanded(
+                  //         child: ElevatedButton.icon(
+                  //           onPressed: _showLowStock,
+                  //           icon: const Icon(Icons.warning, size: 16),
+                  //           label: const Text('Stock Bajo'),
+                  //           style: ElevatedButton.styleFrom(
+                  //             backgroundColor: Colors.orange.shade50,
+                  //             foregroundColor: Colors.orange.shade700,
+                  //             side: BorderSide(color: Colors.orange.shade200),
+                  //           ),
+                  //         ),
+                  //       ),
+                  //       const SizedBox(width: 8),
+                  //       Expanded(
+                  //         child: ElevatedButton.icon(
+                  //           onPressed: _showOutOfStock,
+                  //           icon: const Icon(Icons.error, size: 16),
+                  //           label: const Text('Sin Stock'),
+                  //           style: ElevatedButton.styleFrom(
+                  //             backgroundColor: Colors.red.shade50,
+                  //             foregroundColor: Colors.red.shade700,
+                  //             side: BorderSide(color: Colors.red.shade200),
+                  //           ),
+                  //         ),
+                  //       ),
+                  //     ],
+                  //   ),
+                  // ],
 
                   // Item seleccionado
                   if (_selectedItem != null) ...[
@@ -351,108 +363,114 @@ class _ItemSelectionScreenState extends State<ItemSelectionScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Error: ${state.message}',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(color: Colors.red[600]),
+                        Icon(
+                          Icons.error_outline,
+                          size: 64,
+                          color: Colors.red[400],
                         ),
                         const SizedBox(height: 16),
-                        ElevatedButton(
+                        Text(
+                          'Error al cargar items',
+                          style: Theme.of(context).textTheme.headlineSmall,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          state.message,
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                        const SizedBox(height: 16),
+                        ElevatedButton.icon(
                           onPressed: () {
                             if (_currentView == 'search') {
-                              _onSearchChanged(_searchController.text);
+                              context.read<ItemBloc>().add(
+                                ItemSearchRequested(searchTerm: _searchController.text),
+                              );
                             } else if (_currentView == 'lowStock') {
-                              _showLowStock();
+                              context.read<ItemBloc>().add(const ItemLowStockRequested());
                             } else if (_currentView == 'outOfStock') {
-                              _showOutOfStock();
+                              context.read<ItemBloc>().add(const ItemOutOfStockRequested());
                             }
                           },
-                          child: const Text('Reintentar'),
+                          icon: const Icon(Icons.refresh),
+                          label: const Text('Reintentar'),
                         ),
                       ],
                     ),
                   );
                 }
 
-                // Mostrar resultados de búsqueda normal
-                if ((state is ItemSearchLoaded || state is ItemSearchLoadedMore) && _currentView == 'search') {
-                  final response = state is ItemSearchLoaded 
-                      ? state.response 
-                      : (state as ItemSearchLoadedMore).response;
-                      
-                  if (response.items.isEmpty) {
-                    return const Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.inventory_2_outlined, size: 64, color: Colors.grey),
-                          SizedBox(height: 16),
-                          Text(
-                            'No se encontraron items',
-                            style: TextStyle(color: Colors.grey, fontSize: 16),
-                          ),
-                        ],
-                      ),
-                    );
-                  }
+                // Estados con datos de items
+                List<Item> items = [];
+                bool isLoadingMore = false;
+                bool hasMorePages = false;
 
-                  return _buildItemList(response.items, response.hasMorePages);
+                if (state is ItemSearchLoaded) {
+                  items = state.response.items;
+                  hasMorePages = state.response.hasMorePages;
+                } else if (state is ItemSearchLoadedMore) {
+                  items = state.allItems;
+                  hasMorePages = state.response.hasMorePages;
+                } else if (state is ItemLoadingMore) {
+                  items = state.currentItems;
+                  isLoadingMore = true;
                 }
 
-                // Mostrar items con stock bajo
-                if (state is ItemLowStockLoaded && _currentView == 'lowStock') {
-                  if (state.lowStockItems.isEmpty) {
-                    return const Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.check_circle, size: 64, color: Colors.green),
-                          SizedBox(height: 16),
-                          Text(
-                            'No hay items con stock bajo',
-                            style: TextStyle(color: Colors.green, fontSize: 16),
+                if (items.isEmpty) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.search_off,
+                          size: 64,
+                          color: Colors.grey[400],
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          _getEmptyMessage(),
+                          style: Theme.of(context).textTheme.titleMedium,
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          _getEmptySubtitle(),
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: Colors.grey[600],
                           ),
-                        ],
-                      ),
-                    );
-                  }
-                  return _buildItemList(state.lowStockItems, false);
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  );
                 }
 
-                // Mostrar items sin stock
-                if (state is ItemOutOfStockLoaded && _currentView == 'outOfStock') {
-                  if (state.outOfStockItems.isEmpty) {
-                    return const Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.check_circle, size: 64, color: Colors.green),
-                          SizedBox(height: 16),
-                          Text(
-                            'No hay items sin stock',
-                            style: TextStyle(color: Colors.green, fontSize: 16),
-                          ),
-                        ],
-                      ),
-                    );
-                  }
-                  return _buildItemList(state.outOfStockItems, false);
-                }
+                return RefreshIndicator(
+                  onRefresh: () async {
+                    if (_currentView == 'search') {
+                      context.read<ItemBloc>().add(
+                        ItemSearchRequested(searchTerm: _searchController.text),
+                      );
+                    } else if (_currentView == 'lowStock') {
+                      context.read<ItemBloc>().add(const ItemLowStockRequested());
+                    } else if (_currentView == 'outOfStock') {
+                      context.read<ItemBloc>().add(const ItemOutOfStockRequested());
+                    }
+                  },
+                  child: ListView.builder(
+                    controller: _scrollController,
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    itemCount: items.length + (isLoadingMore ? 1 : 0),
+                    itemBuilder: (context, index) {
+                      if (index >= items.length) {
+                        return const Padding(
+                          padding: EdgeInsets.all(16),
+                          child: Center(child: CircularProgressIndicator()),
+                        );
+                      }
 
-                // Estado inicial
-                return const Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.search, size: 64, color: Colors.grey),
-                      SizedBox(height: 16),
-                      Text(
-                        'Busca items o explora por stock',
-                        style: TextStyle(color: Colors.grey, fontSize: 16),
-                      ),
-                    ],
+                      return _buildItemCard(items[index]);
+                    },
                   ),
                 );
               },
@@ -460,159 +478,169 @@ class _ItemSelectionScreenState extends State<ItemSelectionScreen> {
           ),
         ],
       ),
-      floatingActionButton: _selectedItem != null
-          ? FloatingActionButton.extended(
-              onPressed: _confirmSelection,
-              backgroundColor: Colors.blue[600],
-              foregroundColor: Colors.white,
-              icon: const Icon(Icons.check),
-              label: const Text('Confirmar'),
-            )
-          : null,
     );
   }
 
-  String _getAppBarTitle() {
+  String _getEmptyMessage() {
     switch (_currentView) {
       case 'lowStock':
-        return 'Items con Stock Bajo';
+        return 'No hay items con stock bajo';
       case 'outOfStock':
-        return 'Items Sin Stock';
+        return 'No hay items sin stock';
       default:
-        return 'Seleccionar Item';
+        return _hasSearched ? 'No se encontraron items' : 'No hay items disponibles';
     }
   }
 
-  Widget _buildItemList(List<Item> items, bool hasMore) {
-    return ListView.builder(
-      controller: _scrollController,
-      padding: const EdgeInsets.all(16),
-      itemCount: items.length + (hasMore ? 1 : 0),
-      itemBuilder: (context, index) {
-        if (index == items.length) {
-          return const Center(
-            child: Padding(
-              padding: EdgeInsets.all(16.0),
-              child: CircularProgressIndicator(),
-            ),
-          );
-        }
+  String _getEmptySubtitle() {
+    switch (_currentView) {
+      case 'lowStock':
+        return 'Todos los items tienen stock suficiente';
+      case 'outOfStock':
+        return 'Todos los items tienen stock disponible';
+      default:
+        return _hasSearched 
+            ? 'Intenta con otros términos de búsqueda'
+            : 'Intenta realizar una búsqueda';
+    }
+  }
 
-        final item = items[index];
-        final isSelected = _selectedItem?.itemCode == item.itemCode;
-        final stockColor = widget.showStock ? _getStockColor(item.stock) : Colors.grey;
-        final stockIcon = widget.showStock ? _getStockIcon(item.stock) : Icons.inventory_2;
+  Widget _buildItemCard(Item item) {
+    final isSelected = _selectedItem?.itemCode == item.itemCode;
+    final hasRequiredStock = widget.requiredQuantity == null || 
+                            item.stock >= widget.requiredQuantity!;
 
-        return Container(
-          margin: const EdgeInsets.only(bottom: 8),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            border: isSelected
-                ? Border.all(color: Colors.blue[600]!, width: 2)
-                : null,
-          ),
-          child: Card(
-            elevation: isSelected ? 4 : 1,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: ListTile(
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 8,
-              ),
-              leading: CircleAvatar(
-                backgroundColor: isSelected
-                    ? Colors.blue[600]
-                    : (widget.showStock ? stockColor.withOpacity(0.1) : Colors.grey[300]),
-                child: Icon(
-                  widget.showStock ? stockIcon : Icons.inventory_2,
-                  color: isSelected 
-                      ? Colors.white 
-                      : (widget.showStock ? stockColor : Colors.grey[600]),
-                  size: 20,
-                ),
-              ),
-              title: Text(
-                item.displayName,
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: isSelected ? Colors.blue[700] : null,
-                ),
-              ),
-              subtitle: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+    return Card(
+      elevation: isSelected ? 8 : 2,
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: isSelected 
+              ? Theme.of(context).primaryColor 
+              : Colors.transparent,
+          width: 2,
+        ),
+      ),
+      child: InkWell(
+        onTap: () => _selectItem(item),
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header con código y nombre
+              Row(
                 children: [
-                  Text(
-                    'Código: ${item.itemCode}',
-                    style: TextStyle(
-                      color: Colors.grey[600],
-                      fontSize: 12,
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).primaryColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      item.itemCode,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).primaryColor,
+                      ),
                     ),
                   ),
-                  if (widget.showStock) ...[
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.inventory,
-                          size: 14,
-                          color: stockColor,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          'Stock: ${item.stockDisplay}',
-                          style: TextStyle(
-                            color: stockColor,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        if (widget.validateStock && widget.requiredQuantity != null && item.stock < widget.requiredQuantity!) ...[
-                          const SizedBox(width: 8),
-                          Icon(
-                            Icons.warning,
-                            size: 14,
-                            color: Colors.red,
-                          ),
-                          const SizedBox(width: 2),
-                          Text(
-                            'Insuficiente',
-                            style: TextStyle(
-                              color: Colors.red,
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ],
+                  const Spacer(),
+                  if (isSelected)
+                    Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).primaryColor,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.check,
+                        color: Colors.white,
+                        size: 16,
+                      ),
                     ),
-                  ],
+                ],
+              ),
+              const SizedBox(height: 8),
+              
+              // Nombre del item
+              Text(
+                item.displayName,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 12),
+              
+              // Stock information y botón de stock por almacenes
+              Row(
+                children: [
+                  Icon(
+                    _getStockIcon(item.stock),
+                    color: _getStockColor(item.stock),
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
                   Text(
-                    'UGP Entry: ${item.ugpEntry}',
+                    'Stock: ${item.stockDisplay}',
                     style: TextStyle(
-                      color: Colors.grey[600],
-                      fontSize: 12,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: _getStockColor(item.stock),
                     ),
+                  ),
+                  const Spacer(),
+                  // Botón compacto para ver stock por almacenes
+                  CompactWarehouseStockButton(
+                    itemCode: item.itemCode,
+                    itemName: item.itemName,
+                    currentStock: item.stock,
                   ),
                 ],
               ),
-              trailing: isSelected
-                  ? Icon(
-                      Icons.check_circle,
-                      color: Colors.blue[600],
-                      size: 28,
-                    )
-                  : Icon(
-                      Icons.radio_button_unchecked,
-                      color: Colors.grey[400],
-                      size: 28,
-                    ),
-              onTap: () => _selectItem(item),
-            ),
+              
+              // Advertencia de stock insuficiente
+              if (widget.validateStock && widget.requiredQuantity != null && !hasRequiredStock) ...[
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.red[50],
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: Colors.red[200]!),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.warning,
+                        color: Colors.red[600],
+                        size: 16,
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          'Stock insuficiente (Requerido: ${widget.requiredQuantity!.toStringAsFixed(2)})',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.red[700],
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 }
